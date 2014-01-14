@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
 	<link rel="stylesheet" charset="utf-8" href="http://g.tbcdn.cn/kissy/k/1.4.0/css/dpl/base-min.css">
-    <script type="text/javascript" src="../kcharts/index.js"></script>
+    <script type="text/javascript" src="../graph/index.js"></script>
     <title>kcharts</title>
   </head>
   <body>
@@ -11,7 +11,7 @@
     <script>
      // 一、基础API
      // 1. 使用方式一，很自然的实现多种图表的混搭
-     KISSY.use("gallery/kcharts/2.0/kcharts/index",function(S,KCharts){
+     KISSY.use("gallery/kcharts/2.0/graph/index",function(S,KCharts){
        // 图表容器
        var chart = new KCharts({renderTo:"#J_Canvas"});       
        
@@ -24,9 +24,11 @@
        // tip插件
        var tip = new KCharts.Tip();
        
-       // 添加 line、bar 、tip
-       chart.plug(line);
-       chart.plug(bar);
+       // 添加 line、bar 
+       chart.add(line);
+       chart.add(bar);
+       
+       // 控件 tip
        chart.plug(tip);
 
        // 移除bar
@@ -34,7 +36,7 @@
      });
 
      // 2. 使用方式二，仿Highcharts
-     KISSY.use("gallery/kcharts/2.0/kcharts/index",function(S,KCharts){
+     KISSY.use("gallery/kcharts/2.0/graph/index",function(S,KCharts){
        
        var linechart = new KCharts({
          renderTo:"#J_Canvas",

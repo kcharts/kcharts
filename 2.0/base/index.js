@@ -8,7 +8,10 @@ KISSY.add("gallery/kcharts/2.0/base/index",function(S){
     // 添加widget
     plug:function(){},
     // 移除widget
-    unplug:function(){}
+    unplug:function(){},
+    //==================== 基础方法 start ====================
+    test:function(){}
+    //==================== 基础方法 end ====================
   });
 
   return BaseChart;

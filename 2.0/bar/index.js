@@ -4,9 +4,18 @@
 KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K){
 
   //==================== utils ====================
-  /**
+  /** TODO 统一所有图表的数据格式
    * 将series数据统一为标准的格式
-   * [1,3,2,8,...] --> [{value:34},...]
+   * 1. [1,3,2,8,...] for line/bar/pie
+   * 2. [{x:1,y:"Mon",color:"red"},{x:3,y:"Tue"},...] for line/bar/pie
+   * 3. [{name:false,data:[{x:false,y:1},{x:false,y:3},...]}] for line/bar
+   * 最终要转化为 [{name:"Group1",data:[ [xval,yval] , ... ]}]
+   * */
+  function formatSeriesData2(series){
+  }
+
+  /**
+   * [1,3,2,8] --> [{value:1},...]
    * */
   function formatSeriesData(series){
     return K.map(series,function(item){
@@ -107,7 +116,7 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K){
   //==================== end utils ====================
 
   var Bar = BaseChart.extend({
-    initialize:function(){
+    initializer:function(){
 
     },
     render:function(){

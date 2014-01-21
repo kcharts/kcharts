@@ -42,7 +42,7 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
     var yval = series[0].yval;
     if(!xval || typeof xval === "string"){
       result = K.map(series,function(s,index){
-                 s.xstring = s.xval;
+                 s.xstring = s.xval || index;
                  s.xval = index;
                  return s;
                });
@@ -72,9 +72,12 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
    * @param opt {Object}
    *   - basevalue
    *   - barPaddingX 如果是bar的化，可以是双向的
+   * @param barinfo {Object}
+   *   - barwidth
+   *   - interval
    * @return result {Array} 格式同series，但是多了画布坐标信息x，y
    * */
-  function convertSeriesToPoints(series,chartBBox,xrangeConfig,yrangeConfig,filter,opt){
+  function convertSeriesToPoints(series,chartBBox,xrangeConfig,yrangeConfig,filter,opt,barinfo){
     if(!series || !series.length)
       return [];
     opt || (opt = {});
@@ -89,8 +92,9 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
       series3 = series2;
     }
 
+    var serielen = series3.length;
     // 过滤后都不剩了
-    if(!series3.length)
+    if(!serielen)
       return [];
 
     var xvalues = [];
@@ -99,29 +103,29 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
       xvalues.push(serie.xval);
       yvalues.push(serie.yval);
     });
-
     var xrange = getRange(xvalues,xrangeConfig);
-    var yrange = getRange(xvalues,yrangeConfig);
+    var yrange = getRange(yvalues,yrangeConfig);
 
     // 如果是柱状图，可能有基线 basevalue
     var basevalue = opt.basevalue || 0;
-    var barPadding = opt.barPadding || 0;
+    var barPadding = opt.barPadding;
 
-    if(xrange.max === xrange.min)
-      return false;
-    if(yrange.max === yrange.min)
-      return false;
+    // if(xrange.max === xrange.min)
+    //   return false;
+    // if(yrange.max === yrange.min)
+    //   return false;
 
-    var xvaluerange = xrange.max - xrange.min;
-    var yvaluerange = yrange.max - yrange.min;
+    var xvaluerange = xrange.max - xrange.min + 1;
+    var yvaluerange = yrange.max - yrange.min + 1;
 
-    var xunit = (chartBBox.width - barPadding) / xvaluerange;
+    // 产生均匀的x轴刻度划分
+    var xunit = (chartBBox.width - barPadding*2 + barinfo.interval) / xvaluerange;
     var yunit = (chartBBox.height) / yvaluerange;
 
     return K.map(series,function(i){
              var s = S.clone(i);
-             s.x = chartBBox.left + s.xval*xunit;
-             s.y = chartBBox.top + s.xval*yunit;
+             s.x = s.xval*xunit;
+             s.y = s.yval*yunit;
              return s;
            });
   }

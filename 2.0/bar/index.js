@@ -89,7 +89,7 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
     barwidth = UNIT*ratio;
     maxWidth || (maxWidth = 50);
     if(barwidth > maxWidth){
-      barwidth = maxWidth
+      barwidth = maxWidth;
     }
     interval = UNIT - barwidth;
     if(maxInterval){
@@ -124,50 +124,105 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
       var chartBBox = this.setChartBBox();
       // 根据图表的左上角位置、图表宽度、高度（如果显示的设置了的话），转换所有的图标点为画布点
 
-      // series转换到画布上的数据
-      // TODO 设置默认rangeConfig值
-      var xrangeConfig = {};
-      var yrangeConfig = {};
-      var seriesFilter = false; // serie过滤函数
-      var convertOption = {}; // series数据转为paper数据的配置选项，{basevalue:val,barPaddingX:val2}
-
-      var series3 = K.map(series2,function(serie){
-                      var xy0 = serie.data;
-                      var xy1 = BaseUtil.convertSeriesToPoints(xy0,chartBBox,xrangeConfig,yrangeConfig,seriesFilter,convertOption);
-                      console.log(xy0,chartBBox,xrangeConfig,yrangeConfig,seriesFilter,convertOption);
-                      console.log(JSON.stringify(xy1));
-                      var ret = {};
-                      S.mix(ret,serie,true,[],["data"],false);
-                      ret.data = xy1;
-                      return ret;
-                    });
-
-      var seriesLen = series3.length;
+      // note:注意产度的计算
+      var seriesLen = series2[0].data.length;
       //==================== 计算柱子宽度、间隔 ====================
       // {
       // barwidth:barwidth,
       // interval:interval,
       // totalWidth:barwidth+interval
       // }
-      var barinfo = getBarInfo(chartBBox.width/seriesLen, // 如果有多组数据要进行划分
-                               seriesLen,0.5,40,40);
+
+      var maxWidth = 40
+        , maxInterval = 40
+        , ratio = 0.3 ;
+
+      // var barinfo  = getBarInfo(chartBBox.width/seriesLen, // 如果有多组数据要进行划分
+      //                          seriesLen,ratio,maxWidth,maxInterval);
+
+      var interval; // bar之间的间隔
+      var barwidth; // bar的宽度
+
+      // 计算合适barPadding
+      var barPadding = 10;
+      var w1 = barPadding*2 + maxInterval*(seriesLen-1) + maxWidth*seriesLen; // 最大宽度
+      if(w1 < chartBBox.width){
+        barPadding = (chartBBox.width - (maxInterval*(seriesLen-1) + maxWidth*(seriesLen)))/2;
+        interval = maxInterval;
+        barwidth = maxWidth;
+      }else{
+        // 计算过程
+        // x/(x+y) = r
+        // x = r(x+y) = rx + ry
+        // x - rx = ry
+        // ==>
+        // y = (1 - r)x/r
+        //
+        // nx+(n-1)y = w
+        // nx+(n-1)(1-r)x/r = w
+        // nx+(n-1-nr+r)x/r = w
+        // x(n+(n-1-nr+r)/r) = w
+        // x = w/(n+(n-1-nr+r)/r)
+        //
+        // y = (1 - r)x/r
+        //
+        var totalWidth = chartBBox.width - barPadding*2;
+
+        barwidth = totalWidth/(seriesLen+(seriesLen-1-seriesLen*ratio+ratio)/ratio);
+        interval = (1 - ratio)*barwidth/ratio;
+      }
+
+      // 柱信息
+      var barinfo = {
+          barwidth:barwidth,
+          interval:interval,
+          totalwidth:barwidth+interval
+      };
+
+      // barPadding = 100;
+      // console.log(barPadding);
+
+      // series转换到画布上的数据
+      // TODO 设置默认rangeConfig值
+      var xrangeConfig = {};
+      var yrangeConfig = {};
+      var seriesFilter = false; // serie过滤函数
+      var convertOption = {}; // series数据转为paper数据的配置选项，{basevalue:val,barPaddingX:val2}
+      convertOption.basevalue = 0;
+      convertOption.barPadding = barPadding;
+
+      var series3 = K.map(series2,function(serie){
+                      var xy0 = serie.data;
+                      var xy1 = BaseUtil.convertSeriesToPoints(xy0,chartBBox,xrangeConfig,yrangeConfig,seriesFilter,convertOption,barinfo);
+                      var ret = {};
+                      // 复制一份数据
+                      S.mix(ret,serie,true,[],["data"],false);
+                      ret.data = xy1;
+                      return ret;
+                    });
 
       //==================== 渲染 ====================
       K.each(series3,function(serie,index){
-        that._drawBars(serie.data,seriesLen,index,chartBBox,barinfo);
+        that._drawBars(serie.data,seriesLen,index,chartBBox,barinfo,convertOption);
       });
     },
-    _drawBars:function(points,groupLen,groupIndex,chartBBox,barinfo){
+    /**
+     * @param barOption
+     *   - barPadding 填充
+     * */
+    _drawBars:function(points,groupLen,groupIndex,chartBBox,barinfo,barOption){
       var graph = this.get("graph");
       var paper = graph.get("paper");
 
       var barwidth = barinfo.barwidth;
+      var barPadding = barOption.barPadding;
       var that = this;
       var leftBottomY = chartBBox.top + chartBBox.height ;
       K.each(points,function(p){
-        var leftBottomX = p.x - barwidth/2 + groupIndex*barinfo.totalWidth;
-        var y = chartBBox.height - p.y + chartBBox.top; // 左下角的y
-        var x = p.x - barwidth/2;
+        var y = chartBBox.top + chartBBox.height - p.y; // 左下角的y
+        var x = p.x+barPadding+chartBBox.left; // 左下角x
+        // paper.circle(x,p.y,5);
+        // paper.text(x,p.y,p.xstring);
         paper.rect(x,y,barwidth,p.y,0);
       });
     }

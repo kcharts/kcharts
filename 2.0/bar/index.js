@@ -80,27 +80,6 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
    * @param maxInterval 最大间隔
    * @param ratio 柱子所占的比率，剩下的就为间隔
    * */
-  function getBarInfo(width,num,ratio,maxWidth,maxInterval){
-    // 1个柱子数据其实会分成2份
-    num+=1;
-    var UNIT = width/num;
-    var barwidth;
-    var interval;
-    barwidth = UNIT*ratio;
-    maxWidth || (maxWidth = 50);
-    if(barwidth > maxWidth){
-      barwidth = maxWidth;
-    }
-    interval = UNIT - barwidth;
-    if(maxInterval){
-      interval = maxInterval;
-    }
-    return {
-      barwidth:barwidth,
-      interval:interval,
-      totalWidth:barwidth+interval
-    }
-  }
   //==================== end utils ====================
 
   var Bar = BaseChart.extend({
@@ -126,19 +105,11 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
 
       // note:注意产度的计算
       var seriesLen = series2[0].data.length;
-      //==================== 计算柱子宽度、间隔 ====================
-      // {
-      // barwidth:barwidth,
-      // interval:interval,
-      // totalWidth:barwidth+interval
-      // }
 
       var maxWidth = 40
-        , maxInterval = 40
+        , maxInterval = 40 // 单个柱形之间的最大间隔
+        , maxGroupInterval = 80 // 柱形图组之间的最大间隔
         , ratio = 0.3 ;
-
-      // var barinfo  = getBarInfo(chartBBox.width/seriesLen, // 如果有多组数据要进行划分
-      //                          seriesLen,ratio,maxWidth,maxInterval);
 
       var interval; // bar之间的间隔
       var barwidth; // bar的宽度

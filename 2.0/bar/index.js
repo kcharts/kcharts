@@ -94,55 +94,83 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
       if(series1.length === 0){
         return;
       }
-      //==================== 数据转为画布点 ====================
+
+      //==================== 数据格式化 ====================
       // [{name:"第一组",data:[{xval:3,y:"A"},{xval:2,yval:"B"},...]}]
       // series 标准数据格式
       var series2 = BaseUtil.formatSeriesData(series1);
-      var barPaddingX = 5; // 柱形图的起始偏移量
 
       var chartBBox = this.setChartBBox();
       // 根据图表的左上角位置、图表宽度、高度（如果显示的设置了的话），转换所有的图标点为画布点
 
-      // note:注意产度的计算
-      var seriesLen = series2[0].data.length;
+      var groupLen = series2.length; // 组个数
+      var seriesLen = series2[0].data.length;// 单个组的bar个数
 
+      //==================== 柱子的默认信息 ====================
       var maxWidth = 40
         , maxInterval = 40 // 单个柱形之间的最大间隔
         , maxGroupInterval = 80 // 柱形图组之间的最大间隔
-        , ratio = 0.3 ;
+        , r1 = .5  // interval/barwidth = 0.5
+        , r2 = 3  // groupInterval/barwidth = 1.5
 
+      //==================== interval barwidth groupinterval barPadding ====================
       var interval; // bar之间的间隔
       var barwidth; // bar的宽度
+      var groupinterval; // 组之间的间隔
+      var barPadding = 10; // 合适barPadding，默认为10
 
-      // 计算合适barPadding
-      var barPadding = 10;
-      var w1 = barPadding*2 + maxInterval*(seriesLen-1) + maxWidth*seriesLen; // 最大宽度
+      var barRealArea = maxGroupInterval*(groupLen-1) + groupLen * (maxInterval * (seriesLen-1) + maxWidth*seriesLen); // bar 实际占据的空间
+      var w1 = barPadding*2 + barRealArea; // 最大宽度
       if(w1 < chartBBox.width){
-        barPadding = (chartBBox.width - (maxInterval*(seriesLen-1) + maxWidth*(seriesLen)))/2;
+        barPadding = (chartBBox.width - barRealArea)/2;
         interval = maxInterval;
+        groupinterval = maxGroupInterval;
         barwidth = maxWidth;
       }else{
-        // 计算过程
-        // x/(x+y) = r
-        // x = r(x+y) = rx + ry
-        // x - rx = ry
+        // 方案一、 [弃用]
+
+        // 方案二、
+        // x:barwidth y:interval  z:groupInterval
+        // m:组数     n:每组bar数 w:总宽度
+        // x*n*m + y*(m-1)*n + z*(n-1) = w
+        // y = r1*x;
+        // z = r2*x;
         // ==>
-        // y = (1 - r)x/r
+        // x*m*n + r1*x(n*m - n) + r2*x(n-1) = w
+        // x*m*n + x*(r1*n*m - r*n) + x*(r2*n-r2) = w
+        // x*(m*n + r1*n*m - r1*n + r2*n - r2) = w
+        // x = w/(m*n + r1*n*m - r1*n + r2*n - r2)
+        // y = r1*x
+        // z = r2*x
         //
-        // nx+(n-1)y = w
-        // nx+(n-1)(1-r)x/r = w
-        // nx+(n-1-nr+r)x/r = w
-        // x(n+(n-1-nr+r)/r) = w
-        // x = w/(n+(n-1-nr+r)/r)
-        //
-        // y = (1 - r)x/r
-        //
+
         var totalWidth = chartBBox.width - barPadding*2;
 
-        barwidth = totalWidth/(seriesLen+(seriesLen-1-seriesLen*ratio+ratio)/ratio);
-        interval = (1 - ratio)*barwidth/ratio;
+        // var graph = this.get("graph");
+        // var paper = graph.get("paper");
+        // paper.rect(chartBBox.left+barPadding,chartBBox.top,totalWidth,chartBBox.height);
+
+        var n = seriesLen;
+        var m = groupLen;
+        barwidth = totalWidth/(m*n + r1*n*m - r1*n + r2*n - r2);
+
+        // 修正barwidth
+        if(barwidth > maxWidth){
+          barwidth = maxWidth;
+
+          interval = r1*barwidth;
+          groupinterval = r2*barwidth;
+
+          // 重新计算barPadding
+          var barRealArea2 = groupinterval*(groupLen-1) + groupLen * (interval * (seriesLen-1) + barwidth*seriesLen);
+          barPadding = (chartBBox.width - barRealArea2)/2;
+        }else{
+          interval = r1*barwidth;
+          groupinterval = r2*barwidth;
+        }
       }
 
+      //==================== 一些元信息 ====================
       // 柱信息
       var barinfo = {
           barwidth:barwidth,
@@ -150,31 +178,48 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
           totalwidth:barwidth+interval
       };
 
-      // barPadding = 100;
-      // console.log(barPadding);
-
       // series转换到画布上的数据
       // TODO 设置默认rangeConfig值
       var xrangeConfig = {};
       var yrangeConfig = {};
-      var seriesFilter = false; // serie过滤函数
-      var convertOption = {}; // series数据转为paper数据的配置选项，{basevalue:val,barPaddingX:val2}
+
+      var convertOption = {};
       convertOption.basevalue = 0;
       convertOption.barPadding = barPadding;
 
-      var series3 = K.map(series2,function(serie){
-                      var xy0 = serie.data;
-                      var xy1 = BaseUtil.convertSeriesToPoints(xy0,chartBBox,xrangeConfig,yrangeConfig,seriesFilter,convertOption,barinfo);
-                      var ret = {};
-                      // 复制一份数据
-                      S.mix(ret,serie,true,[],["data"],false);
-                      ret.data = xy1;
-                      return ret;
-                    });
+      //==================== 获取range ====================
+      var xvalues = [];
+      var yvalues = [];
+      K.each(series2,function(serie){
+        K.each(serie.data,function(xy){
+          xvalues.push(xy.xval);
+          yvalues.push(xy.yval);
+        });
+      });
+      var xrange = BaseUtil.getRange(xvalues,xrangeConfig);
+      var yrange = BaseUtil.getRange(yvalues,yrangeConfig);
 
+      var xvaluerange = xrange.max - xrange.min + 1;
+      var yvaluerange = yrange.max - yrange.min + 1;
+
+      //==================== 转换xy值为画布值 ====================
+      var series3 = K.map(series2,function(serie,groupIndex){
+                      // 产生均匀的x轴刻度划分
+                      // var xunit = (chartBBox.width - barPadding*2 + barinfo.interval) / xvaluerange;
+                      var yunit = (chartBBox.height) / yvaluerange;
+                      var xys = K.map(serie.data,function(xy,barIndex){
+                                  var x = groupIndex*(barwidth + interval) + barIndex*(groupLen*barwidth+(groupLen-1)*interval + groupinterval);
+                                  return {
+                                    x:x,      // bar x刻度算法
+                                    y:yunit*xy.yval
+                                  };
+                                });
+                      serie.dataxy = xys;
+                      return serie;
+                    });
       //==================== 渲染 ====================
       K.each(series3,function(serie,index){
-        that._drawBars(serie.data,seriesLen,index,chartBBox,barinfo,convertOption);
+        that._drawBars(serie.dataxy,seriesLen,index,chartBBox,barinfo,convertOption);
       });
     },
     /**

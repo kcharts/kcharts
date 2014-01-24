@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
 	<link rel="stylesheet" charset="utf-8" href="http://g.tbcdn.cn/kissy/k/1.4.0/css/dpl/base-min.css">
-    <script charset="utf-8" src="http://g.tbcdn.cn/kissy/k/1.4.0/seed.js"></script>
+    <script charset="utf-8" src="http://g.tbcdn.cn/kissy/k/1.4.0/seed-min.js"></script>
     <script type="text/javascript" src="../raphael/index.js"></script>
     <script type="text/javascript" src="../graph/index.js"></script>
     <script type="text/javascript" src="../base/index.js"></script>
@@ -22,8 +22,20 @@
        // 图表容器
        var chart = new KCharts({renderTo:"#J_Canvas"});       
        
+       var series = [
+         {"data":[{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1}]}
+         /* ,{"data":[{"yval":2},{"yval":2},{"yval":2}]} */
+       ];
+       var series = [
+         {"data":[{"yval":2},{"yval":2}]},
+         {"data":[{"yval":1},{"yval":1}]},
+         {"data":[{"yval":1},{"yval":1}]},
+         {"data":[{"yval":1},{"yval":1}]},
+         {"data":[{"yval":1},{"yval":1}]},
+         {"data":[{"yval":1},{"yval":1}]}
+       ];
        // 柱状图
-       var bar = new Bar({series:[1]});
+       var bar = new Bar({series:series});
        chart.add(bar);
      });
     </script>

@@ -122,15 +122,22 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
       // 产生均匀的x轴刻度划分，NOTE:bar未用到
       var xunit = (chartBBox.width - barPadding*2 + barinfo.interval) / xvaluerange;
       // 分成上下相等的两部分
-      var yunit = (chartBBox.height) / yvaluerange / 2;
-
+      var yunit = (chartBBox.height) / yvaluerange;
       //==================== 转换选项 ====================
       var convertOption = {};
       convertOption.barPadding = barPadding;
-
       //==================== 转换xy值为画布值 ====================
-      var option = {m:groupLen,n:seriesLen,xunit:xunit,yunit:yunit};
-      var series3 = BaseUtil.convertToCanvasPoint(series2,barinfo,option);
+      var option = {
+        m:groupLen,
+        n:seriesLen,
+        xunit:xunit,
+        yunit:yunit,
+        barinfo:barinfo,
+        chartBBox:chartBBox,
+        barPadding:barPadding,
+        isbar:true
+      };
+      var series3 = BaseUtil.convertToCanvasPoint(series2,option);
       //==================== 渲染 ====================
       K.each(series3,function(serie,index){
         that._drawBars(serie.dataxy,seriesLen,index,chartBBox,barinfo,convertOption);
@@ -149,16 +156,8 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
       var barPadding = option.barPadding;
 
       var that = this;
-      var leftBottomY = chartBBox.top + chartBBox.height ;
       K.each(points,function(p){
-        var x = p.x+barPadding+chartBBox.left;
-        var y;
-        if(!p.revert){ // 向上的柱子
-          y = chartBBox.top + chartBBox.height/2 - p.y;
-        }else{ // 向下的柱子
-          y = chartBBox.top + chartBBox.height/2;
-        }
-        paper.rect(x,y,barwidth,p.y,0);
+        paper.rect(p.x,p.y,p.width,p.height,0);
       });
     }
   });

@@ -5,6 +5,13 @@
 KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
   var BaseUtil = {};
 
+
+  // 放大m倍后，进行四舍五入
+  // 0.006 ==> 0.01
+  function roundToFixed(num,m){
+    return Math.round(num*m)/m;
+  }
+
   /**
    * TODO 统一所有图表的数据格式
    * 将series数据统一为标准的格式 3
@@ -134,29 +141,60 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
   //   - xunit x单位量
   //   - yunit y单位量
   //   - isbar 是否为bar
+  //   - barinfo
+  //   - chartBBox 图表主体区域
+  //   - barPadding 只有bar的时候才在水平方向上padding
   // @param barinfo {Object}
   //
-  function convertToCanvasPoint(series,barinfo,option){
+  function convertToCanvasPoint(series,option){
+    // only for bar
+    var barinfo = option.barinfo;
+    var barPadding = option.barPadding;
+
+    // general
+    var chartBBox = option.chartBBox;
     return K.map(series,function(serie,groupIndex){
+             var xys0 = serie.data;
              // 将xys值对转为实际的画布坐标值
-             var xys = K.map(serie.data,function(xy,barIndex){
+             var xys = K.map(xys0,function(xy,barIndex){
+                         // 确定反向的标志位
+                         var revert = false;
+                         if(xy.yval < 0){
+                           revert = true;
+                         }
                          // 针对bar，有多组的算法
                          var x;
                          if(option.isbar){ // bar
                            x = groupIndex*(barinfo.barwidth + barinfo.interval) + barIndex*(option.m*barinfo.barwidth+(option.m-1)*barinfo.interval + barinfo.groupinterval);
-                         }else{ // line scatter
+                           x = chartBBox.left + barPadding+x;
+                         }else{            // line scatter
                            x = option.xunit * xy.xval;
+                           x = chartBBox.left + x;
                          }
 
-                         // 确定反向的标志位
-                         var revert = false;
+                         //
+                         var y = Math.abs(option.yunit*xy.yval);
+                         var w;
+                         var h;
 
-                         if(xy.yval < 0){
-                           revert = true;
+                         // only for bar 并且是双向的柱子
+                         if(option.isbar){
+                           w = barinfo.barwidth;
+                           if(revert){
+                             h = y;
+                             y = chartBBox.top + chartBBox.height/2;
+                           }else{
+                             h = y;
+                             y = chartBBox.top + chartBBox.height/2 - y;
+                           }
+                         }else{
+                           y = chartBBox.top + chartBBox.height - y;
                          }
                          return {
-                           x:x,      // bar x刻度算法
-                           y:Math.abs(option.yunit*xy.yval),
+                           x:x,      // only for bar x刻度算法
+                           y:y,
+                           width:w,  // only for bar
+                           height:h, // only for bar
                            revert:revert
                          };
                        });
@@ -360,6 +398,72 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
   //==================== 划分刻度end ====================
 
   BaseUtil.tickIt = tickIt2;
+
+  //==================== 连线 ====================
+   /**
+    * 曲线
+    * @param points{Array} 点集
+    * paper for test
+    * */
+  function polyLine(points,paper){
+    var s;
+    for(var i=0,l=points.length;i<l;i++){
+      var point = points[i]
+        , x = point.x
+        , y = point.y
+      paper.circle(x,y,2);
+      if(i){
+        s.push("L",x,y);
+      }else{
+        s = ["M",x,y]
+      }
+    }
+    return s.join(',');
+  }
+
+  /**
+   * 平滑的连线，
+   * 注意中间可能有断开的线段
+   * @param points {Array}
+   * @return str {String} Raphael path 路径字符串
+   * */
+  function curveLine(points){
+    var str,
+    arr = [],
+    point, x , y;
+    if(points.length <= 2){
+      for(var i=0,l=points.length;i<l;i++){
+        point = points[i]
+        x = point.x;
+        y = point.y;
+
+        x = roundToFixed(x,100);
+        y = roundToFixed(y,100);
+        if(i){
+          arr.push("L",x,y);
+        }else{
+          arr.push("M",x,y);
+        }
+      }
+    }else{
+      for(var i=0,l=points.length;i<l;i++){
+        point = points[i]
+        x = point.x;
+        y = point.y;
+        x = roundToFixed(x,100);
+        y = roundToFixed(y,100);
+        if(i){
+          arr.push(x,y);
+        }else{
+          arr.push("M",x,y,'R');
+        }
+      }
+    }
+    str = arr.join(",");
+    return str;
+  }
+  BaseUtil.polyLine = polyLine;
+  BaseUtil.curveLine = curveLine;
 
   return BaseUtil;
 },{

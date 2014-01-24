@@ -4,84 +4,9 @@
 KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUtil){
 
   //==================== utils ====================
-  /**
-   * TODO
-   * 将 [{name:"第一组",data:[{xval:3,y:"A"},{xval:2,yval:"B"},...]}] for line/bar
-   * 转化为
-   *    [{name:"第一组",data:[{xval:3,x:2,y:1},{xval:2,x:3,y:3,yval:34},...]}] 最终格式
-   *
-   * 将series数据转为可用于画barchart的数据
-   * @param series {Array}
-   *   eg. [{x:"星期一",y:3},...]
-   *   eg. [{x:2,y:4},...]
-   * @param chartBBox {Object}
-   *   - left
-   *   - top
-   *   - width
-   *   - height
-   * @param opt
-   *   - basevalue {Number} 基线值 默认0
-   *   - leftx 画布左下角x
-   *   - lefty
-   *   - width 画布宽度，除去padding
-   *   - height 画布高度，除去padding
-   * @return xys {Array}
-   *   eg. [{x:x,y;y},...]
-   * note:
-   *   只要有数据，柱子就要有最小高度，避免看不见.
-   * */
-  function convertSeriesToPoints(series,chartBbox,opt){
-    var values = K.map(series,function(serie){
-                   return serie.value;
-                 });
 
-    var maxvalue = Math.max.apply(Math,values); // 柱子的最大值
-    var minvalue = Math.min.apply(Math,values); // 柱子的最小值
 
-    // 如果是柱状图，可能有
-    var basevalue = opt.basevalue || 0; // 基线
-    var len = series.length;
-
-    var valuerange; // y值，也就是value跨度
-    // 查看基线是否在最大值和最小值之间，来确定valuerange
-    if(basevalue < minvalue){
-      valuerange = maxvalue - basevalue;
-    }else if(basevalue > maxvalue){
-      valuerange = basevalue - minvalue;
-    }else{
-      valuerange = maxvalue - minvalue;
-    }
-
-    // 单位value对应的画布高度
-    var UNITY = (opt.height - opt.padding.paddingTop - opt.padding.paddingBottom)/valuerange;
-
-    var ys; // 所有的y值
-    ys = K.map(series,function(serie){
-           return (serie.value - basevalue) * UNITY;
-         });
-    var width2 = opt.width - opt.paddingx*2;
-    var UNITX = width2/(len+1); // x轴有len+1份数
-
-    var xys = [];
-    for(var i=0;i<len;i++){
-      xys.push({
-        x:i*UNITX + opt.paddingx,
-        y:ys[i]
-      });
-    }
-    return xys;
-  }
-
-  /**
-   * 获取柱子信息：柱子宽度、间隔
-   * @param width 柱子占据空间宽度
-   * @param num 柱子个数
-   * @param maxWidth 柱子最大宽度
-   * @param maxInterval 最大间隔
-   * @param ratio 柱子所占的比率，剩下的就为间隔
-   * */
-  //==================== end utils ====================
-
+  //==================== Class Bar ====================
   var Bar = BaseChart.extend({
     initializer:function(){
 
@@ -94,7 +19,6 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
       if(series1.length === 0){
         return;
       }
-
       //==================== 数据格式化 ====================
       // [{name:"第一组",data:[{xval:3,y:"A"},{xval:2,yval:"B"},...]}]
       // series 标准数据格式
@@ -111,7 +35,7 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
         , maxInterval = 40 // 单个柱形之间的最大间隔
         , maxGroupInterval = 80 // 柱形图组之间的最大间隔
         , r1 = .5  // interval/barwidth = 0.5
-        , r2 = 3  // groupInterval/barwidth = 1.5
+        , r2 = 3   // groupInterval/barwidth = 1.5
 
       //==================== interval barwidth groupinterval barPadding ====================
       var interval; // bar之间的间隔
@@ -146,10 +70,6 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
 
         var totalWidth = chartBBox.width - barPadding*2;
 
-        // var graph = this.get("graph");
-        // var paper = graph.get("paper");
-        // paper.rect(chartBBox.left+barPadding,chartBBox.top,totalWidth,chartBBox.height);
-
         var n = seriesLen;
         var m = groupLen;
         barwidth = totalWidth/(m*n + r1*n*m - r1*n + r2*n - r2);
@@ -175,6 +95,7 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
       var barinfo = {
           barwidth:barwidth,
           interval:interval,
+          groupinterval:groupinterval,
           totalwidth:barwidth+interval
       };
 
@@ -183,11 +104,7 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
       var xrangeConfig = {};
       var yrangeConfig = {};
 
-      var convertOption = {};
-      convertOption.basevalue = 0;
-      convertOption.barPadding = barPadding;
-
-      //==================== 获取range ====================
+      //==================== range ====================
       var xvalues = [];
       var yvalues = [];
       K.each(series2,function(serie){
@@ -202,43 +119,45 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
       var xvaluerange = xrange.max - xrange.min + 1;
       var yvaluerange = yrange.max - yrange.min + 1;
 
+      // 产生均匀的x轴刻度划分，NOTE:bar未用到
+      var xunit = (chartBBox.width - barPadding*2 + barinfo.interval) / xvaluerange;
+      // 分成上下相等的两部分
+      var yunit = (chartBBox.height) / yvaluerange / 2;
+
+      //==================== 转换选项 ====================
+      var convertOption = {};
+      convertOption.barPadding = barPadding;
+
       //==================== 转换xy值为画布值 ====================
-      var series3 = K.map(series2,function(serie,groupIndex){
-                      // 产生均匀的x轴刻度划分
-                      // var xunit = (chartBBox.width - barPadding*2 + barinfo.interval) / xvaluerange;
-                      var yunit = (chartBBox.height) / yvaluerange;
-                      var xys = K.map(serie.data,function(xy,barIndex){
-                                  var x = groupIndex*(barwidth + interval) + barIndex*(groupLen*barwidth+(groupLen-1)*interval + groupinterval);
-                                  return {
-                                    x:x,      // bar x刻度算法
-                                    y:yunit*xy.yval
-                                  };
-                                });
-                      serie.dataxy = xys;
-                      return serie;
-                    });
+      var option = {m:groupLen,n:seriesLen,xunit:xunit,yunit:yunit};
+      var series3 = BaseUtil.convertToCanvasPoint(series2,barinfo,option);
       //==================== 渲染 ====================
       K.each(series3,function(serie,index){
         that._drawBars(serie.dataxy,seriesLen,index,chartBBox,barinfo,convertOption);
       });
     },
     /**
-     * @param barOption
+     * @param barinfo {Object}
+     * @param option {Object}
      *   - barPadding 填充
      * */
-    _drawBars:function(points,groupLen,groupIndex,chartBBox,barinfo,barOption){
+    _drawBars:function(points,groupLen,groupIndex,chartBBox,barinfo,option){
       var graph = this.get("graph");
       var paper = graph.get("paper");
 
       var barwidth = barinfo.barwidth;
-      var barPadding = barOption.barPadding;
+      var barPadding = option.barPadding;
+
       var that = this;
       var leftBottomY = chartBBox.top + chartBBox.height ;
       K.each(points,function(p){
-        var y = chartBBox.top + chartBBox.height - p.y; // 左下角的y
-        var x = p.x+barPadding+chartBBox.left; // 左下角x
-        // paper.circle(x,p.y,5);
-        // paper.text(x,p.y,p.xstring);
+        var x = p.x+barPadding+chartBBox.left;
+        var y;
+        if(!p.revert){ // 向上的柱子
+          y = chartBBox.top + chartBBox.height/2 - p.y;
+        }else{ // 向下的柱子
+          y = chartBBox.top + chartBBox.height/2;
+        }
         paper.rect(x,y,barwidth,p.y,0);
       });
     }

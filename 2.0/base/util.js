@@ -103,17 +103,13 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
       xvalues.push(serie.xval);
       yvalues.push(serie.yval);
     });
+
     var xrange = getRange(xvalues,xrangeConfig);
     var yrange = getRange(yvalues,yrangeConfig);
 
     // 如果是柱状图，可能有基线 basevalue
     var basevalue = opt.basevalue || 0;
     var barPadding = opt.barPadding;
-
-    // if(xrange.max === xrange.min)
-    //   return false;
-    // if(yrange.max === yrange.min)
-    //   return false;
 
     var xvaluerange = xrange.max - xrange.min + 1;
     var yvaluerange = yrange.max - yrange.min + 1;
@@ -130,6 +126,45 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
            });
   }
   BaseUtil.convertSeriesToPoints = convertSeriesToPoints;
+
+  // 数据值转为画布坐标值
+  // @param option {Object}
+  //   - m 组数目
+  //   - n 每组数据条目数
+  //   - xunit x单位量
+  //   - yunit y单位量
+  //   - isbar 是否为bar
+  // @param barinfo {Object}
+  //
+  function convertToCanvasPoint(series,barinfo,option){
+    return K.map(series,function(serie,groupIndex){
+             // 将xys值对转为实际的画布坐标值
+             var xys = K.map(serie.data,function(xy,barIndex){
+                         // 针对bar，有多组的算法
+                         var x;
+                         if(option.isbar){ // bar
+                           x = groupIndex*(barinfo.barwidth + barinfo.interval) + barIndex*(option.m*barinfo.barwidth+(option.m-1)*barinfo.interval + barinfo.groupinterval);
+                         }else{ // line scatter
+                           x = option.xunit * xy.xval;
+                         }
+
+                         // 确定反向的标志位
+                         var revert = false;
+
+                         if(xy.yval < 0){
+                           revert = true;
+                         }
+                         return {
+                           x:x,      // bar x刻度算法
+                           y:Math.abs(option.yunit*xy.yval),
+                           revert:revert
+                         };
+                       });
+             serie.dataxy = xys;
+             return serie;
+           });
+  }
+  BaseUtil.convertToCanvasPoint = convertToCanvasPoint;
 
   // 获取vals范围
   // @param vals {Array}

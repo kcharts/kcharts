@@ -67,6 +67,8 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
   BaseUtil.textSeriesToNumberSeries = _textSeriesToNumberSeries;
 
   /**
+   * TODO remove ： 已经没有使用这个功能函数了
+   *
    * 将series数据转为画布点
    * 1. 将 [{xval:"星期一",yval:3},...] 转为 [{xval:1,xstring:"星期一",yval:4},...]
    * 2. 增加一个过滤步骤：如果配置了x和y轴的范围的话，要过滤范围之外的数据
@@ -111,6 +113,7 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
       yvalues.push(serie.yval);
     });
 
+    // 获取合适的刻度
     var xrange = getRange(xvalues,xrangeConfig);
     var yrange = getRange(yvalues,yrangeConfig);
 

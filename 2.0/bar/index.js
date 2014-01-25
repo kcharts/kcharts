@@ -113,16 +113,18 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
           yvalues.push(xy.yval);
         });
       });
+      // 获取合适的刻度
       var xrange = BaseUtil.getRange(xvalues,xrangeConfig);
       var yrange = BaseUtil.getRange(yvalues,yrangeConfig);
 
-      var xvaluerange = xrange.max - xrange.min + 1;
-      var yvaluerange = yrange.max - yrange.min + 1;
+      // var xvaluerange = xrange.max - xrange.min + 1;
+      // var yvaluerange = yrange.max - yrange.min + 1;
 
       // 产生均匀的x轴刻度划分，NOTE:bar未用到
-      var xunit = (chartBBox.width - barPadding*2 + barinfo.interval) / xvaluerange;
+      // var xunit = (chartBBox.width - barPadding*2 + barinfo.interval) / xvaluerange;
+      var xunit = (chartBBox.width - barPadding*2 + barinfo.interval) / xrange.length;
       // 分成上下相等的两部分
-      var yunit = (chartBBox.height) / yvaluerange;
+      var yunit = (chartBBox.height) / yrange.length;
       //==================== 转换选项 ====================
       var convertOption = {};
       convertOption.barPadding = barPadding;

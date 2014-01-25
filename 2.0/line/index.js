@@ -47,24 +47,25 @@
         });
       });
 
+      // 获取合适的刻度
       var xrange = BaseUtil.getRange(xvalues,xrangeConfig);
       var yrange = BaseUtil.getRange(yvalues,yrangeConfig);
 
-      var xvaluerange = xrange.max - xrange.min
-      var yvaluerange = yrange.max - yrange.min;
+      // var xvaluerange = xrange.max - xrange.min
+      // var yvaluerange = yrange.max - yrange.min;
 
-      // 如果xvaluerange小于5，要补足
-      if(xvaluerange < 5){
-        xvaluerange = 5;
-      }
-      if(yvaluerange < 1){
-        yvaluerange = 1;
-      }
+      // 确保有最小range
+      // if(xvaluerange < 5){
+      //   xvaluerange = 5;
+      // }
+      // if(yvaluerange < 1){
+      //   yvaluerange = 1;
+      // }
 
       // 产生均匀的x轴刻度划分，NOTE:bar未用到
-      var xunit = (chartBBox.width) / xvaluerange;
+      var xunit = (chartBBox.width) / (xrange.length-1);
       // 分成上下相等的两部分
-      var yunit = (chartBBox.height) / yvaluerange / 2;
+      var yunit = (chartBBox.height) / (yrange.length);
 
       //==================== 以上和bar一样 ====================
       var option = {chartBBox:chartBBox,xunit:xunit,yunit:yunit};

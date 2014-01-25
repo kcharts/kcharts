@@ -10,6 +10,7 @@
     <script type="text/javascript" src="../base/util.js"></script>
     <script type="text/javascript" src="../adapter/kissy.js"></script>
     <script type="text/javascript" src="../w-axis/index.js"></script>
+    <script type="text/javascript" src="../w-grid/index.js"></script>
     <script type="text/javascript" src="../line/index.js"></script>
     <title>bar</title>
   </head>
@@ -19,7 +20,7 @@
     <script>
      // 一、基础API
      // 1. 使用方式一，很自然的实现多种图表的混搭
-     KISSY.use("gallery/kcharts/2.0/graph/index,gallery/kcharts/2.0/bar/index,gallery/kcharts/2.0/w-axis/index",function(S,KCharts,Line,Axis){
+     KISSY.use("gallery/kcharts/2.0/graph/index,gallery/kcharts/2.0/bar/index,gallery/kcharts/2.0/w-axis/index,gallery/kcharts/2.0/w-grid/index",function(S,KCharts,Line,Axis,Grid){
        // 图表容器
        var chart = new KCharts({renderTo:"#J_Canvas"});       
        
@@ -29,12 +30,22 @@
        var line = new Line({series:series});
        chart.add(line);
        
-       // widget
+       // widget axis
        var axis = new Axis({
+         doubleY:true, // 双y轴
+         doubleX:true  // 双x轴
        });
        
        line.plug(axis);
+       
+       // widget grid
+       var grid = new Grid({
+         yaxisNum:2 // 有两条y轴
+       });
+
+       // line.plug(grid);
      });
     </script>
   </body>
 </html>
+

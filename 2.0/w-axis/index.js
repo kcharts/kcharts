@@ -1,15 +1,13 @@
 /**
  * 坐标轴以及刻度
+ * 支持双/多坐标轴
  * TODO 1. xaxis 和 yaxis 可以选择单独进行渲染 2. 销毁实例
+ *      3. 刻度尺最末尾的处理，避免重叠
+ *      4. axis轴显示文案
+ *      5. 添加坐标轴的时候，应该可以重新配置range
  * */
 KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
   //==================== Util ====================
-
-  // 默认连线样式
-  // TODO 移到全局环境中去
-  function getDefaultLineStyle(style){
-    return S.merge({"stroke":"#999","stroke-width":"1"},style);
-  }
 
   /**
    * 画刻度尺
@@ -45,7 +43,7 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
           bx = p.x2;by=p.y2;
         }else{
           ax = p.x0;ay=p.y0;
-          bx = p.x1;by=p.y1;
+          bx = p.x2;by=p.y2;
         }
       }else if(joinStyle === "-.-"){
         ax = p.x1;ay=p.y1;
@@ -66,7 +64,7 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
     if(path){
       path.animate({path:ss},200);
     }else{
-      var sstyle = getDefaultLineStyle(style.style);
+      var sstyle = BaseUtil.getDefaultLineStyle(style.style);
       path = paper.path(ss).attr(sstyle);
     }
     return path;
@@ -81,6 +79,7 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
      * chart.plug()调用时渲染
      * 依赖chart实现方法：
      *   1. getBBox，即chart盒子
+     *   2. 获取x、y轴的文案
      * 依赖chart属性：
      *   1. xrange
      *   2. yrange
@@ -95,6 +94,7 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
 
       var bbox = chart.getBBox();
 
+      // 一、普通的情况
       //   │ B
       //   │
       //   │
@@ -139,6 +139,66 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
         yaxis:false
       });
 
+      // 二、如果配置了双坐标轴，比如添加CD坐标轴，或者BD坐标轴
+      //   │                D│D1
+      // E ─────────── D2
+      // B │                 │
+      //   │                 │
+      //   │                 │
+      //   │                 │
+      // A │                 │C
+      // ─└──────────
+      //   │                 │C1
+      //
+      var doubleY = this.get("doubleY");
+      if(doubleY){
+        var Dx = bbox.left + bbox.width;
+        var Dy = bbox.top;
+        var C1x = Cx;
+        var C1y = Cy + 5;
+        var D1x = Dx;
+        var D1y = Dy - 5;
+
+        // y轴2:y长一点
+        paper.path(BaseUtil.polyLine([{x:C1x,y:C1y},{x:D1x,y:D1y}]));
+
+        // tick标尺:y2
+        var rullerPointsY2 = BaseUtil.getRullerPoints([Cx,Cy],[Dx,Dy],{
+          n:yrange.length,
+          scale:5
+        });
+
+        drawRullerPoints(rullerPointsY2,paper,{
+          yaxis:true,
+          style:{ruller:".-"}
+        });
+      }
+
+      // 双x轴
+      var doubleX = this.get("doubleX");
+      if(doubleX){
+        var Dx = bbox.left + bbox.width;
+        var Dy = bbox.top;
+        var D2x = bbox.left + bbox.width + 5;
+        var D2y = bbox.top;
+
+        var Ex = bbox.left - 5;
+        var Ey = bbox.top;
+
+        // x轴2:x长一点
+        paper.path(BaseUtil.polyLine([{x:Ex,y:Ey},{x:D2x,y:D2y}]));
+
+        // tick标尺:x2
+        var rullerPointsX2 = BaseUtil.getRullerPoints([Bx,By],[Dx,Dy],{
+          n:xrange.length,
+          scale:5
+        });
+
+        drawRullerPoints(rullerPointsX2,paper,{
+          xaxis:true,
+          style:{ruller:".-"}
+        });
+      }
     },
     destroy:function(){
 

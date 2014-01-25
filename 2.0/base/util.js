@@ -6,8 +6,24 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
   var BaseUtil = {};
 
 
+  // for all
+  // 默认连线样式
+  function getDefaultLineStyle(style){
+    return S.merge({"stroke":"#999","stroke-width":"1"},style);
+  }
+  BaseUtil.getDefaultLineStyle = getDefaultLineStyle;
+
+  // for all svg path element
+  function fixSVGLineStyle($path,svg){
+    var el = svg && $path && $path[0];
+    el && el.setAttribute("shape-rendering", "crispEdges");
+  }
+  BaseUtil.fixSVGLineStyle = fixSVGLineStyle;
+
+  // basic tools
   // 放大m倍后，进行四舍五入
-  // 0.006 ==> 0.01
+  // roundToFixed(0.006,100) ==> 0.01
+  // note 直接 (num).toFixed(2) 即可!!，但是toFixe返回的是String类型
   function roundToFixed(num,m){
     return Math.round(num*m)/m;
   }
@@ -560,6 +576,7 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
   }
 
   /**
+   * util for line bar scatter
    * 获取a到b分成opt.n份的坐标集合
    * @return ret {Array} eg. [{x1,y1,x2,y2},...]
    * */
@@ -574,6 +591,54 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
     return ret;
   }
   BaseUtil.getRullerPoints = getRullerPoints;
+
+  /**
+   * util for line bar scatter
+   * 绘制背景网格
+   * @param bbox
+   * @param lxys y轴上的ruller坐标点
+   * @param bxys x轴上的rller坐标点
+   * @param opt {Object}
+   *   - opt.vertical {Bool} 是否为垂直
+   *   - opt.paper 画布
+   *   - opt.svg {Bool} 是否为svg路径
+   *   - opt.axis {Number} 取值0、1、2，影响最后一个网格线的展示：0的时候网格开始结束都要展示、2的时候开始结束不展示、1的时候开始不展示
+   * */
+  function drawGrid(bbox,xys,opt){
+    var topY = bbox.top;
+    var rightX = bbox.left + bbox.width;
+    var a,b;
+    var x1,y1,x2,y2;
+    var paper =  opt.paper;
+    var pathArr = [];
+
+    var l=xys.length;
+    var i;
+    var axis = opt.axis;// 默认认为展示一条轴
+    if(axis === 2){
+      i = 1;
+      l = xys.length - 1;
+    }else if(axis === 0){
+      i = 0;
+      l = xys.length;
+    }else{
+      i = 1;
+      l = xys.length;
+    }
+    for(;i<l;i++){
+      if(opt.vertical){
+        x1 = xys[i].x0; y1 = xys[i].y0;
+        x2 = x1;  y2 = topY;
+      }else{
+        x1 = xys[i].x0; y1 = xys[i].y0;
+        x2 = rightX;  y2 = y1;
+      }
+      pathArr.push("M",x1,y1,"L",x2,y2);
+    }
+    var $grid = paper.path(pathArr.join(","));
+    return $grid;
+  }
+  BaseUtil.drawGrid = drawGrid;
 
   return BaseUtil;
 },{

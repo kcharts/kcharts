@@ -11,6 +11,7 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
   function roundToFixed(num,m){
     return Math.round(num*m)/m;
   }
+  BaseUtil.roundToFixed = roundToFixed;
 
   /**
    * TODO 统一所有图表的数据格式
@@ -414,7 +415,7 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
       var point = points[i]
         , x = point.x
         , y = point.y
-      paper.circle(x,y,2);
+      // paper.circle(x,y,2);
       if(i){
         s.push("L",x,y);
       }else{
@@ -467,6 +468,112 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
   }
   BaseUtil.polyLine = polyLine;
   BaseUtil.curveLine = curveLine;
+
+  //==================== x/y 轴刻度生成 ====================
+  // *辅助函数*
+  //
+  var deg2rad = Math.PI/180;
+  var rad2deg = 180/Math.PI;
+  // 通过a,b两点直线的夹角
+  function linedeg(a,b){
+    var AB = [
+        b[0] - a[0],
+        b[1] - a[1]
+    ];
+
+    if(AB[0] === 0){
+      if(AB[1] > 0){
+        return 90;
+      }else if(AB[1] < 0 ){
+        return -90;
+      }else{
+        return 0;
+      }
+    }else{
+      var ret = rad2deg*Math.atan(AB[1]/AB[0]);
+      if(AB[0] < 0){ // x 轴负方向上
+        ret = ret - 180;
+      }
+      return ret;
+    }
+  }
+
+  // *辅助函数*
+  function lineon( origin, base, bias){
+    if(bias > 1){
+      bias = 1;
+    }else if(bias < 0){
+      bias = 0;
+    }
+    var ret = origin + (base - origin) * bias;
+    return Math.round(ret*100)/100;
+  };
+
+  // *辅助函数*
+  // 根据 a,b，C求出垂直的D E两点
+  //           D
+  //           |
+  // ----a-----C------b--------------------------
+  //           |
+  //           E
+  function verticalLine(a,b,opt){
+    opt || (opt = {});
+    var scale = typeof opt.scale !== 'number'?  3 : opt.scale;  // 刻度尺寸
+    var ratio = typeof opt.ratio !== 'number'? .5 : opt.ratio; // c点在ab之间所占的比例，默认在中间
+
+    var unit = 1000000;
+
+    // 1. 求出a,b与水平的夹角
+    var deg = linedeg(a,b);
+
+    // 2. 根据夹角求出单位向量
+    var ix = Math.cos(deg*deg2rad);
+    var iy = Math.sin(deg*deg2rad);
+
+    // console.log([
+    //   roundToFixed(ix,unit),
+    //   roundToFixed(iy,unit)
+    // ]);
+
+    // 3. 求出ab之间比例为ratio的坐标
+    var x0 = lineon( a[0], b[0], ratio);
+    var y0 = lineon( a[1], b[1], ratio);
+    // console.log([
+    //   roundToFixed(x0,unit),
+    //   roundToFixed(y0,unit)
+    // ]);
+
+    // 4. 求出[x0,y0]上下点的坐标，即d、e
+    var x1,x2  // 左边的点？
+      , y1,y2; // 右边的点？
+    x1 = x0+iy*scale; y1=y0-ix*scale;
+    x2 = x0-iy*scale; y2=y0+ix*scale;
+
+    return {
+      x0:roundToFixed(x0,unit), // 保留原始值
+      y0:roundToFixed(y0,unit),
+      x1:roundToFixed(x1,unit),
+      y1:roundToFixed(y1,unit),
+      x2:roundToFixed(x2,unit),
+      y2:roundToFixed(y2,unit)
+    };
+  }
+
+  /**
+   * 获取a到b分成opt.n份的坐标集合
+   * @return ret {Array} eg. [{x1,y1,x2,y2},...]
+   * */
+  function getRullerPoints(a,b,opt){
+    var rate,ret = [],result;
+    for(var i=0,n=opt.n;i<n;i++){
+      rate = i/(n-1);
+      opt.ratio = rate;
+      result = verticalLine(a,b,opt)
+      ret.push(result);
+    }
+    return ret;
+  }
+  BaseUtil.getRullerPoints = getRullerPoints;
 
   return BaseUtil;
 },{

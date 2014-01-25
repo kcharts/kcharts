@@ -1,13 +1,11 @@
 /**
- * overview :
- *   line bar scatter 有很大的相似之处
- * TODO 简化这个大文件
+ * overview scatter
  * */
-;KISSY.add("gallery/kcharts/2.0/bar/index",function(S,Raphael,BaseChart,Promise,Anim,BaseUtil,D,E,K){
+;KISSY.add("gallery/kcharts/2.0/scatter/index",function(S,Raphael,BaseChart,Promise,Anim,BaseUtil,D,E,K){
    //==================== utils start ====================
 
-   //==================== Class Line ====================
-   var Line = BaseChart.extend({
+   //==================== Class Scatter ====================
+   var Scatter = BaseChart.extend({
     initializer:function(){
 
     },
@@ -24,13 +22,13 @@
       // series 标准数据格式
       var series2 = BaseUtil.formatSeriesData(series1);
 
-      // 只有y轴数据时，line需要修正出数据
+      // 如果只有y轴数据，scatter需要修正出数据
       series2 = K.map(series2,function(serie){
                   serie.data = BaseUtil.textSeriesToNumberSeries(serie.data)
                   return serie;
                 });
 
-      var chartBBox = this.getBBox();
+      var chartBBox = this.setChartBBox();
       // 根据图表的左上角位置、图表宽度、高度（如果显示的设置了的话），转换所有的图标点为画布点
 
       // series转换到画布上的数据
@@ -50,9 +48,6 @@
       // 获取合适的刻度
       var xrange = BaseUtil.getRange(xvalues,xrangeConfig);
       var yrange = BaseUtil.getRange(yvalues,yrangeConfig);
-
-      this.set("xrange",xrange);
-      this.set("yrange",yrange);
 
       // var xvaluerange = xrange.max - xrange.min
       // var yvaluerange = yrange.max - yrange.min;
@@ -76,21 +71,25 @@
 
       //==================== 绘制线条 ====================
       K.each(series3,function(serie,index){
-        that.drawLine(serie.dataxy,chartBBox);
+        that.drawScatter(serie.dataxy,chartBBox);
       });
     },
-    drawLine:function(points){
+    /**
+     * @param points {Array}
+     *   eg. [{"x":30,"y":327.5,"revert":false}]
+     * */
+    drawScatter:function(points){
       var graph = this.get("graph");
       var paper = graph.get("paper");
 
-      var pstr = BaseUtil.polyLine(points,paper);
-
-      paper.path(pstr);
+      // scatter的点就像Line的线联结点
+      K.each(points,function(point){
+        paper.circle(point.x,point.y,3);
+      });
     }
    });
 
-
-   return Line;
+   return Scatter;
  },{
    requires:[
      "gallery/kcharts/2.0/raphael/index",

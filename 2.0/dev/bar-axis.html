@@ -10,6 +10,11 @@
     <script type="text/javascript" src="../base/util.js"></script>
     <script type="text/javascript" src="../bar/index.js"></script>
     <script type="text/javascript" src="../adapter/kissy.js"></script>
+    
+    <!-- 坐标轴、网格支持 -->
+    <script type="text/javascript" src="../w-axis/index.js"></script>
+    <script type="text/javascript" src="../w-grid/index.js"></script>
+
     <title>bar</title>
   </head>
   <body>
@@ -18,25 +23,32 @@
     <script>
      // 一、基础API
      // 1. 使用方式一，很自然的实现多种图表的混搭
-     KISSY.use("gallery/kcharts/2.0/graph/index,gallery/kcharts/2.0/bar/index",function(S,KCharts,Bar){
+     KISSY.use("gallery/kcharts/2.0/graph/index,gallery/kcharts/2.0/bar/index,gallery/kcharts/2.0/w-axis/index,gallery/kcharts/2.0/w-grid/index",function(S,KCharts,Bar,Axis,Grid){
        // 图表容器
        var chart = new KCharts({renderTo:"#J_Canvas"});       
        
-       var series = [
-         {"data":[{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1},{"yval":1}]}
-         /* ,{"data":[{"yval":2},{"yval":2},{"yval":2}]} */
-       ];
        var series = [
          {"data":[{"yval":2},{"yval":4}]},
          {"data":[{"yval":1},{"yval":1}]},
          {"data":[{"yval":1},{"yval":1}]},
          {"data":[{"yval":1},{"yval":1}]},
-         {"data":[{"yval":1},{"yval":-1}]},
-         {"data":[{"yval":1},{"yval":-3}]}
+         {"data":[{"yval":1},{"yval":2}]},
+         {"data":[{"yval":1},{"yval":3}]}
        ];
+       
        // 柱状图
-       var bar = new Bar({series:series});
+       var bar = new Bar({
+         series:series
+       });
        chart.add(bar);
+       
+       // widget axis
+       var axis = new Axis({
+         doubleY:true, // 双y轴
+         doubleX:true  // 双x轴
+       });
+       bar.plug(axis);
+
      });
     </script>
   </body>

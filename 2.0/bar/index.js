@@ -1,7 +1,7 @@
 /**
  * overview bar
  * */
-KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUtil){
+KISSY.add("gallery/kcharts/2.0/bar/index",function(S,Anim,KCharts,BaseChart,K,BaseUtil){
 
   //==================== utils ====================
 
@@ -24,7 +24,7 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
       // series 标准数据格式
       var series2 = BaseUtil.formatSeriesData(series1);
 
-      var chartBBox = this.setChartBBox();
+      var chartBBox = this.getBBox();
       // 根据图表的左上角位置、图表宽度、高度（如果显示的设置了的话），转换所有的图标点为画布点
 
       var groupLen = series2.length; // 组个数
@@ -102,7 +102,7 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
       // series转换到画布上的数据
       // TODO 设置默认rangeConfig值
       var xrangeConfig = {};
-      var yrangeConfig = {};
+      var yrangeConfig = {min:0}; // bar强制从0开始算
 
       //==================== range ====================
       var xvalues = [];
@@ -117,14 +117,27 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
       var xrange = BaseUtil.getRange(xvalues,xrangeConfig);
       var yrange = BaseUtil.getRange(yvalues,yrangeConfig);
 
-      // var xvaluerange = xrange.max - xrange.min + 1;
-      // var yvaluerange = yrange.max - yrange.min + 1;
+      // for later widget use
+      this.set("xrange",xrange);
+      this.set("yrange",yrange);
+
+      var xvaluerange = xrange.max - xrange.min;
+      var yvaluerange = yrange.max - yrange.min;
+
+      if(xvaluerange === 0){
+        xvaluerange = 1;
+      }
+
+      if(yvaluerange === 0){
+        yvaluerange = 1;
+      }
 
       // 产生均匀的x轴刻度划分，NOTE:bar未用到
       // var xunit = (chartBBox.width - barPadding*2 + barinfo.interval) / xvaluerange;
-      var xunit = (chartBBox.width - barPadding*2 + barinfo.interval) / xrange.length;
+      var xunit = (chartBBox.width - barPadding*2 + barinfo.interval) / xvaluerange;
       // 分成上下相等的两部分
-      var yunit = (chartBBox.height) / yrange.length;
+      var yunit = (chartBBox.height) / yvaluerange;
+
       //==================== 转换选项 ====================
       var convertOption = {};
       convertOption.barPadding = barPadding;
@@ -134,15 +147,23 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
         n:seriesLen,
         xunit:xunit,
         yunit:yunit,
+        xmin:xrange.min,
+        ymin:yrange.min,
         barinfo:barinfo,
         chartBBox:chartBBox,
         barPadding:barPadding,
+        biDirection:this.get("biDirection"), // 双向柱状图标记
         isbar:true
       };
       var series3 = BaseUtil.convertToCanvasPoint(series2,option);
       //==================== 渲染 ====================
       K.each(series3,function(serie,index){
-        that._drawBars(serie.dataxy,seriesLen,index,chartBBox,barinfo,convertOption);
+        // TODO configureable
+        // 1. 同步绘制
+        // that.syncDrawBars(serie.dataxy,seriesLen,index,chartBBox,barinfo,convertOption);
+
+        // 2. 动画异步绘制
+        that.asyncDrawBars(serie.dataxy,seriesLen,index,chartBBox,barinfo,convertOption);
       });
     },
     /**
@@ -150,23 +171,86 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,KCharts,BaseChart,K,BaseUti
      * @param option {Object}
      *   - barPadding 填充
      * */
-    _drawBars:function(points,groupLen,groupIndex,chartBBox,barinfo,option){
+    syncDrawBars:function(points,groupLen,groupIndex,chartBBox,barinfo,option){
       var graph = this.get("graph");
       var paper = graph.get("paper");
 
       var barwidth = barinfo.barwidth;
       var barPadding = option.barPadding;
 
-      var that = this;
       K.each(points,function(p){
         paper.rect(p.x,p.y,p.width,p.height,0);
       });
+    },
+    asyncDrawBars:function(points,groupLen,groupIndex,chartBBox,barinfo,option){
+      var graph = this.get("graph");
+      var paper = graph.get("paper");
+
+      var barwidth = barinfo.barwidth;
+      var barPadding = option.barPadding;
+      //==================== same as syncDrawBar ====================
+
+      var $bars = []; // raphael rect实例，高度为0的矩形
+      K.each(points,function(p){
+        var y = p.y;
+        if(!p.revert){
+          y = y - p.height;
+        }
+        $bars.push(
+          paper.rect(p.x,y,p.width,0,0)
+        );
+      });
+
+      // KISSY 1.4.0 开始支持自定义动画[contribute by yuanhuang, yeah!] ，没必要再像之前KCharts1.2那样自己搞一套动画
+      //
+      var anim = new Anim(
+        {r: 0}, // r:0  ->  r:1 ，任意值皆可，仅仅是为了获取fx.pos，fx.pos是一个 [0,1] 范围内的数，所以其实这里没有用到r
+        {r: 1}, {
+          // TODO effect configureable !
+          easing: "swing",
+          duration: 0.6,
+          frame: function (anim, fx) {
+            K.each($bars,function($bar,i){
+              var point = points[i];
+              var revert = point.revert;
+
+              var pos = fx.pos;
+
+              var x = point.x
+                , y = point.y
+                , w = point.width
+                , h = point.height; // 柱子最终高度
+
+              var h0 = h*pos; // 柱子过度高度
+
+              if(revert){ // 柱子朝下
+                // y = y + h0;
+                $bar.attr({
+                  height:h0
+                });
+              }else{ // 柱子朝上
+                y = y + h - h0;// 修正y值
+                $bar.attr({
+                  height:h0,
+                  y:y
+                });
+              }
+            });
+          }
+        }
+      );
+      anim.run();
+      // 我要的promise，直觉的有了
+      // anim.then(function(){
+      //   console.log('anim done');
+      // });
+      return anim;
     }
   });
-
   return Bar;
 },{
   requires:[
+    "anim",
     "gallery/kcharts/2.0/graph/index",
     "gallery/kcharts/2.0/base/index",
     "gallery/kcharts/2.0/adapter/kissy",

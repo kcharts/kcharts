@@ -51,6 +51,7 @@
       var xrange = BaseUtil.getRange(xvalues,xrangeConfig);
       var yrange = BaseUtil.getRange(yvalues,yrangeConfig);
 
+      // for later widget use
       this.set("xrange",xrange);
       this.set("yrange",yrange);
 
@@ -71,7 +72,13 @@
       var yunit = (chartBBox.height) / (yrange.length);
 
       //==================== 以上和bar一样 ====================
-      var option = {chartBBox:chartBBox,xunit:xunit,yunit:yunit};
+      var option = {
+        chartBBox:chartBBox,
+        xunit:xunit,
+        yunit:yunit,
+        xmin:xrange.min,
+        ymin:xrange.min
+      };
       var series3 = BaseUtil.convertToCanvasPoint(series2,option);
 
       //==================== 绘制线条 ====================

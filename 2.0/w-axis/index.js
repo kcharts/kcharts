@@ -12,6 +12,10 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
   /**
    * 画刻度尺
    * @param collection {Array}
+   * @param opt {Object}
+   *   - style {Object}
+   *     - ruller 可选值为 -.-   -.    .- 三种情况
+   *   - start 为0时第一个刻度要渲染
    * */
   function drawRullerPoints(collection,paper,opt){
     opt || (opt = {});
@@ -24,7 +28,13 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
     var s = [];
     var p;
     var ax,bx,ay,by;
-    for(var i=1,l=collection.length;i<l;i++){
+    var i=1,
+        l=collection.length;
+    // 特殊情况的起点为0
+    if(opt.start == 0){
+      i = 0;
+    }
+    for(;i<l;i++){
       p = collection[i];
 
       if(joinStyle === '-.'){
@@ -95,6 +105,7 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
       var bbox = chart.getBBox();
 
       // 一、普通的情况
+      // note ： 当为双向的bar时，A不是在最左下角
       //   │ B
       //   │
       //   │
@@ -102,6 +113,9 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
       //A1 │ A                 C
       // ─└──────────
       //   │A2
+      //   │
+      //   │
+      //   │
       //
       var Ax = bbox.left;
       var Ay = bbox.top + bbox.height;
@@ -113,6 +127,16 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
       var By = bbox.top; // TODO 如果有箭头样式要做fix
       var Cx = bbox.left + bbox.width; // TODO 如果有箭头样式要做fix
       var Cy = bbox.top + bbox.height;
+
+      // 是否是双向的bar
+      var isBiBar = (chart.chartType === "bar" && chart.get("biDirection") === true);
+
+      // char是双向的时候，区别对待：修正AC这条线的位置
+      if(isBiBar){
+        Ay = bbox.top + bbox.height/2;
+        Cy = Ay;
+        A1y = Ay;
+      }
 
       // x轴:x长一点
       paper.path(BaseUtil.polyLine([{x:A1x,y:A1y},{x:Cx+5,y:Cy}]));
@@ -131,12 +155,25 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
 
       // tick标尺:y
       var yrange = chart.get("yrange");
-      var rullerPointsY = BaseUtil.getRullerPoints([Ax,Ay],[Bx,By],{
-        n:yrange.length,
-        scale:5
-      });
+      var rullerPointsY;
+      var start=1;
+      if(isBiBar){
+        // 又修正回来
+        Ay = bbox.top + bbox.height;
+        rullerPointsY = BaseUtil.getRullerPoints([Ax,Ay],[Bx,By],{
+          n:yrange.length,
+          scale:5
+        });
+        start = 0;
+      }else{
+        rullerPointsY = BaseUtil.getRullerPoints([Ax,Ay],[Bx,By],{
+          n:yrange.length,
+          scale:5
+        });
+      }
       drawRullerPoints(rullerPointsY,paper,{
-        yaxis:false
+        yaxis:false,
+        start:start
       });
 
       // 二、如果配置了双坐标轴，比如添加CD坐标轴，或者BD坐标轴
@@ -155,7 +192,7 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
         var Dx = bbox.left + bbox.width;
         var Dy = bbox.top;
         var C1x = Cx;
-        var C1y = Cy + 5;
+        var C1y = bbox.top + bbox.height;
         var D1x = Dx;
         var D1y = Dy - 5;
 
@@ -163,13 +200,25 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
         paper.path(BaseUtil.polyLine([{x:C1x,y:C1y},{x:D1x,y:D1y}]));
 
         // tick标尺:y2
-        var rullerPointsY2 = BaseUtil.getRullerPoints([Cx,Cy],[Dx,Dy],{
-          n:yrange.length,
-          scale:5
-        });
+        var rullerPointsY2;
+        var start = 1;
+        if(isBiBar){
+          Cy = bbox.top + bbox.height;
+          rullerPointsY2 = BaseUtil.getRullerPoints([Cx,Cy],[Dx,Dy],{
+            n:yrange.length,
+            scale:5
+          });
+          start = 0;
+        }else{
+          rullerPointsY2 = BaseUtil.getRullerPoints([Cx,Cy],[Dx,Dy],{
+            n:yrange.length,
+            scale:5
+          });
+        }
 
         drawRullerPoints(rullerPointsY2,paper,{
           yaxis:true,
+          start:start,
           style:{ruller:".-"}
         });
       }

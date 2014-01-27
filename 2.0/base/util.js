@@ -182,8 +182,6 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
                          if(xy.yval < 0){
                            revert = true;
                          }
-                         // 双向柱状图标记
-                         option.biDirection = revert;
                          // 针对bar，有多组的算法
                          var x;
                          if(option.isbar){ // bar
@@ -193,10 +191,8 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
                            x = option.xunit * xy.xval;
                            x = chartBBox.left + x;
                          }
-                         //
-                         var y = option.yunit*Math.abs(
-                           (xy.yval - option.ymin)
-                         );
+                         var y = option.yunit*Math.abs(xy.yval);
+
                          var w;
                          var h;
 

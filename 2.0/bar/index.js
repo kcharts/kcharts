@@ -9,7 +9,7 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,Anim,KCharts,BaseChart,K,Ba
   //==================== Class Bar ====================
   var Bar = BaseChart.extend({
     initializer:function(){
-
+      this.chartType = "bar";
     },
     render:function(){
       var that = this;
@@ -160,10 +160,10 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,Anim,KCharts,BaseChart,K,Ba
       K.each(series3,function(serie,index){
         // TODO configureable
         // 1. 同步绘制
-        // that.syncDrawBars(serie.dataxy,seriesLen,index,chartBBox,barinfo,convertOption);
+        that.syncDrawBars(serie.dataxy,seriesLen,index,chartBBox,barinfo,convertOption);
 
         // 2. 动画异步绘制
-        that.asyncDrawBars(serie.dataxy,seriesLen,index,chartBBox,barinfo,convertOption);
+        // that.asyncDrawBars(serie.dataxy,seriesLen,index,chartBBox,barinfo,convertOption);
       });
     },
     /**
@@ -196,6 +196,7 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,Anim,KCharts,BaseChart,K,Ba
         if(!p.revert){
           y = y - p.height;
         }
+        paper.circle(p.x,p.y,3);
         $bars.push(
           paper.rect(p.x,y,p.width,0,0)
         );

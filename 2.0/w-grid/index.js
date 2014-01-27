@@ -7,7 +7,6 @@ KISSY.add("gallery/kcharts/2.0/w-grid/index",function(S,Base,BaseUtil){
   //==================== Class Grid ====================
   var Grid = Base.extend({
     initializer:function(){
-
     },
     /**
      * 类似 axis
@@ -36,6 +35,9 @@ KISSY.add("gallery/kcharts/2.0/w-grid/index",function(S,Base,BaseUtil){
       //   │
       //   │ A                 C
       // ─└──────────
+      //   │
+      //   │
+      //   │
       //   │
       //
       var Ax = bbox.left;

@@ -1,5 +1,5 @@
 /**
- * 坐标轴以及刻度
+ * 坐标轴以及刻度，以及刻度对应的文案
  * 支持双/多坐标轴
  * TODO 1. xaxis 和 yaxis 可以选择单独进行渲染 2. 销毁实例
  *      3. 刻度尺最末尾的处理，避免重叠
@@ -8,6 +8,7 @@
  * */
 KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
   //==================== Util ====================
+  var each = S.each;
 
   /**
    * 画刻度尺
@@ -152,6 +153,11 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
       drawRullerPoints(rullerPointsX,paper,{
         xaxis:true
       });
+      // 绘制x轴标尺文案
+      each(rullerPointsX,function(p,i){
+        // 如果是bar，需要barPadding+barinfo.width修正
+        paper.text(p.x0,p.y0+20,i);
+      });
 
       // tick标尺:y
       var yrange = chart.get("yrange");
@@ -174,6 +180,11 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
       drawRullerPoints(rullerPointsY,paper,{
         yaxis:false,
         start:start
+      });
+
+      // 绘制y轴标尺文案
+      each(rullerPointsY,function(p,i){
+        paper.text(p.x0 - 20,p.y0,i);
       });
 
       // 二、如果配置了双坐标轴，比如添加CD坐标轴，或者BD坐标轴

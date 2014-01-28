@@ -41,15 +41,27 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
       return [];
     var needle = series[0];
     if(typeof needle === "number"){                 // 1.
-      var data = K.map(series,function(v){
+      var data = K.map(series,function(v,i){
                    return {
-                     yval:v
+                     yval:v,
+                     xval:i
                    };
                  });
       return [{data:data}];
-    }else if((typeof needle.xval !== "undefined" || // 2.
-              typeof needle.yval !== "undefined")){
-      return [{data:series}];
+    }else if(S.isArray(needle.data)){      // 2.
+      var data = K.map(series,function(serie){
+                   var xys = S.map(serie.data,function(v,i){
+                               var xval = typeof v.xval === "undefined" ? i : v.xval;
+                               var yval = typeof v.yval === "undefined" ? i : v.yval;
+                               return {
+                                 xval:xval,
+                                 yval:yval
+                               };
+                             });
+                   serie.data = xys;
+                   return serie;
+                 });
+      return data;//[{data:data}];
     }else{                                          // 3. 或者其它
       return series;
     }
@@ -170,7 +182,6 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
     // only for bar
     var barinfo = option.barinfo;
     var barPadding = option.barPadding;
-
     // general
     var chartBBox = option.chartBBox;
     return K.map(series,function(serie,groupIndex){
@@ -586,14 +597,20 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
   function getRullerPoints(a,b,opt){
     var rate,ret = [],result;
     for(var i=0,n=opt.n;i<n;i++){
-      rate = i/(n-1);
+      if(n === 1){
+        rate = 1;
+      }else{
+        rate = i/(n-1);
+      }
       opt.ratio = rate;
-      result = verticalLine(a,b,opt)
+      result = verticalLine(a,b,opt);
       ret.push(result);
     }
     return ret;
   }
   BaseUtil.getRullerPoints = getRullerPoints;
+
+  // verticalLine([30,370],[670,370],{n:1,ratio:1,sacle:5});
 
   /**
    * util for line bar scatter

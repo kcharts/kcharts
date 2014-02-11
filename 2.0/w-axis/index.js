@@ -5,6 +5,7 @@
  *      3. 刻度尺最末尾的处理，避免重叠
  *      4. axis轴显示文案
  *      5. 添加坐标轴的时候，应该可以重新配置range
+ * NOTE 1. bar的xaxis是根据实际文案来的；line/scatter的xaxis文案是根据range计算出来的
  * */
 KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
   //==================== Util ====================
@@ -89,8 +90,8 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
     /**
      * chart.plug()调用时渲染
      * 依赖chart实现方法：
-     *   1. getBBox，即chart盒子
-     *   2. 获取x、y轴的文案
+     *   1. getBBox : 获取chart盒子
+     *   2. getXYText : 获取x、y轴的文案
      * 依赖chart属性：
      *   1. xrange
      *   2. yrange
@@ -153,11 +154,11 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
       drawRullerPoints(rullerPointsX,paper,{
         xaxis:true
       });
+
       // 绘制x轴标尺文案
-      each(rullerPointsX,function(p,i){
-        // 如果是bar，需要barPadding+barinfo.width修正
-        paper.text(p.x0,p.y0+20,i);
-      });
+      // each(rullerPointsX,function(p,i){
+      //   paper.text(p.x0,p.y0+20,xytext.xtext[i]);
+      // });
 
       // tick标尺:y
       var yrange = chart.get("yrange");
@@ -183,8 +184,24 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
       });
 
       // 绘制y轴标尺文案
-      each(rullerPointsY,function(p,i){
-        paper.text(p.x0 - 20,p.y0,i);
+      // each(rullerPointsY,function(p,i){
+      //   paper.text(p.x0 - 20,p.y0,xytext.ytext[i]);
+      // });
+
+      // 获取xy轴文案
+      // console.log(JSON.stringify(rullerPointsY));
+      var option = {
+          xunit:chart.get("@xunit"),
+          yunit:chart.get("@yunit")
+      };
+      var xylabels = chart.getXYText(rullerPointsX, rullerPointsY, option);
+      // 绘制x、y轴标尺文案
+      each(xylabels.ylabel,function(p,i){
+        paper.text(p.x - 15,p.y,p.ytext || i);
+      });
+
+      each(xylabels.xlabel,function(p,i){
+        paper.text(p.x,p.y+15,p.xtext || i);
       });
 
       // 二、如果配置了双坐标轴，比如添加CD坐标轴，或者BD坐标轴

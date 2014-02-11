@@ -25,6 +25,7 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
   // roundToFixed(0.006,100) ==> 0.01
   // note 直接 (num).toFixed(2) 即可!!，但是toFixe返回的是String类型
   function roundToFixed(num,m){
+    m || (m = 2);
     return Math.round(num*m)/m;
   }
   BaseUtil.roundToFixed = roundToFixed;
@@ -53,10 +54,13 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
                    var xys = S.map(serie.data,function(v,i){
                                var xval = typeof v.xval === "undefined" ? i : v.xval;
                                var yval = typeof v.yval === "undefined" ? i : v.yval;
-                               return {
+                               var ret = {}
+                               S.mix(ret,v);
+                               S.mix(ret,{
                                  xval:xval,
                                  yval:yval
-                               };
+                               });
+                               return ret;
                              });
                    serie.data = xys;
                    return serie;
@@ -197,8 +201,8 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
                          var x;
                          if(option.isbar){ // bar
                            x = groupIndex*(barinfo.barwidth + barinfo.interval) + barIndex*(option.m*barinfo.barwidth+(option.m-1)*barinfo.interval + barinfo.groupinterval);
-                           x = chartBBox.left + barPadding+x;
-                         }else{            // line scatter
+                           x = chartBBox.left + barPadding + x;
+                         }else{            // line or scatter
                            x = option.xunit * xy.xval;
                            x = chartBBox.left + x;
                          }
@@ -225,10 +229,14 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
                            y = chartBBox.top + chartBBox.height - y;
                          }
                          return {
-                           x:x,      // only for bar x刻度算法
+                           x:x,          // only for bar x刻度算法
                            y:y,
-                           width:w,  // only for bar
-                           height:h, // only for bar
+                           rawx:xy.xval, // for later use，暂时还没有用到
+                           rawy:xy.yval,
+                           xtext:xy.xtext || '', // x、y标注
+                           ytext:xy.ytext || '',
+                           width:w,      // only for bar
+                           height:h,     // only for bar
                            revert:revert
                          };
                        });

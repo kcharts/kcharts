@@ -27,8 +27,10 @@
        // 图表容器
        var chart = new KCharts({renderTo:"#J_Canvas"});       
        
+       // 注意，现在只能定义x轴的文案
+       // TODO, y轴的label文案应该提供自定义函数来支持
        var series = [
-         {"data":[{"yval":2},{"yval":4}]},
+         {"data":[{"yval":2,"xtext":"st."},{"yval":4}]},
          {"data":[{"yval":1},{"yval":1}]},
          {"data":[{"yval":1},{"yval":1}]},
          {"data":[{"yval":1},{"yval":1}]},

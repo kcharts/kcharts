@@ -71,6 +71,10 @@
       // 分成上下相等的两部分
       var yunit = (chartBBox.height) / (yrange.length);
 
+      // for later use
+      this.set("@xunit",xunit);
+      this.set("@yunit",yunit);
+
       //==================== 以上和bar一样 ====================
       var option = {
         chartBBox:chartBBox,

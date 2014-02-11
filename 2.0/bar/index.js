@@ -98,6 +98,8 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,Anim,KCharts,BaseChart,K,Ba
           groupinterval:groupinterval,
           totalwidth:barwidth+interval
       };
+      // for later use
+      this.set("@barinfo",barinfo);
 
       // series转换到画布上的数据
       // TODO 设置默认rangeConfig值
@@ -135,8 +137,11 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,Anim,KCharts,BaseChart,K,Ba
       // 产生均匀的x轴刻度划分，NOTE:bar未用到
       // var xunit = (chartBBox.width - barPadding*2 + barinfo.interval) / xvaluerange;
       var xunit = (chartBBox.width - barPadding*2 + barinfo.interval) / xvaluerange;
-      // 分成上下相等的两部分
       var yunit = (chartBBox.height) / yvaluerange;
+
+      // for later use
+      this.set("@xunit",xunit);
+      this.set("@yunit",yunit);
 
       //==================== 转换选项 ====================
       var convertOption = {};
@@ -155,25 +160,76 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,Anim,KCharts,BaseChart,K,Ba
         biDirection:this.get("biDirection"), // 双向柱状图标记
         isbar:true
       };
+      // console.log(JSON.stringify(series2));
       var series3 = BaseUtil.convertToCanvasPoint(series2,option);
       //==================== 渲染 ====================
       K.each(series3,function(serie,index){
         // TODO configureable
         // 1. 同步绘制
-        that.syncDrawBars(serie.dataxy,seriesLen,index,chartBBox,barinfo,convertOption);
+        that.syncDrawBars(serie,seriesLen,index,chartBBox,barinfo,convertOption);
 
         // 2. 动画异步绘制
         // that.asyncDrawBars(serie.dataxy,seriesLen,index,chartBBox,barinfo,convertOption);
       });
+
+      // 保存处理后过后的数据
+      // 内部数据用@开始
+      // 使用到的地方：无
+      this.set("@series",series3);
+
+      // 获取label文案信息
+      // console.log(JSON.stringify(this.getXYText()));
+    },
+    // 重写base.js的方法
+    getXYText:function(rullerPointsX,rullerPointsY,option){
+      var ret = {};
+      var xlabel = [];
+      var ylabel = [];
+
+      var bbox = this.getBBox();
+      var barinfo = this.get("@barinfo");
+
+      var x0 = bbox.left;
+      var y0 = bbox.top + bbox.height;
+
+      var series3 = this.get("@series",series3);
+
+      // x轴上的文案
+      K.each(series3,function(serie,index){
+        K.each(serie.dataxy,function(p,i){
+          xlabel.push({
+            x:p.x+barinfo.barwidth/2,
+            y:y0,
+            xtext:p.xtext
+          });
+        });
+      });
+
+      var yrange = this.get("yrange");
+      ylabel = S.map(yrange.vals,function(yval,i){
+                 var p = rullerPointsY[i];
+                 // var y = option.yunit*Math.abs(xy.yval);
+                 return {
+                   x:p.x0,
+                   y:p.y0,
+                   // TODO 可自定义配置
+                   ytext:yval.toFixed(2)
+                 };
+               });
+      ret.xlabel = xlabel;
+      ret.ylabel = ylabel;
+      return ret;
     },
     /**
      * @param barinfo {Object}
      * @param option {Object}
      *   - barPadding 填充
      * */
-    syncDrawBars:function(points,groupLen,groupIndex,chartBBox,barinfo,option){
+    syncDrawBars:function(serie,groupLen,groupIndex,chartBBox,barinfo,option){
       var graph = this.get("graph");
       var paper = graph.get("paper");
+
+      var points = serie.dataxy;
 
       var barwidth = barinfo.barwidth;
       var barPadding = option.barPadding;

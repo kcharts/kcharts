@@ -184,7 +184,7 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
   //
   function convertToCanvasPoint(series,option){
     // only for bar
-    var barinfo = option.barinfo;
+    var barinfo    = option.barinfo;
     var barPadding = option.barPadding;
     // general
     var chartBBox = option.chartBBox;
@@ -199,14 +199,15 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
                          }
                          // 针对bar，有多组的算法
                          var x;
+                         // barinfo.groupinterval = 40;
                          if(option.isbar){ // bar
                            x = groupIndex*(barinfo.barwidth + barinfo.interval) + barIndex*(option.m*barinfo.barwidth+(option.m-1)*barinfo.interval + barinfo.groupinterval);
                            x = chartBBox.left + barPadding + x;
                          }else{            // line or scatter
-                           x = option.xunit * xy.xval;
+                           x = option.xunit * (xy.xval - option.xmin);
                            x = chartBBox.left + x;
                          }
-                         var y = option.yunit*Math.abs(xy.yval);
+                         var y = option.yunit * Math.abs( xy.yval - option.ymin );
 
                          var w;
                          var h;
@@ -228,6 +229,7 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
                          }else{
                            y = chartBBox.top + chartBBox.height - y;
                          }
+
                          return {
                            x:x,          // only for bar x刻度算法
                            y:y,

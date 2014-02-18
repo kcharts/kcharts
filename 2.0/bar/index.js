@@ -33,11 +33,12 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,Anim,KCharts,BaseChart,K,Ba
       //==================== 柱子的默认信息 ====================
       var maxWidth = 40
         , maxInterval = 40 // 单个柱形之间的最大间隔
-        , maxGroupInterval = 80 // 柱形图组之间的最大间隔
+        , maxGroupInterval = groupLen > 1 ? 60 : maxInterval // 柱形图组之间的最大间隔 ： 注意只有一组数据的时候
         , r1 = .5  // interval/barwidth = 0.5
         , r2 = 3   // groupInterval/barwidth = 1.5
 
       //==================== interval barwidth groupinterval barPadding ====================
+      // 多组的情况
       var interval; // bar之间的间隔
       var barwidth; // bar的宽度
       var groupinterval; // 组之间的间隔
@@ -133,7 +134,6 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,Anim,KCharts,BaseChart,K,Ba
       if(yvaluerange === 0){
         yvaluerange = 1;
       }
-
       // 产生均匀的x轴刻度划分，NOTE:bar未用到
       // var xunit = (chartBBox.width - barPadding*2 + barinfo.interval) / xvaluerange;
       var xunit = (chartBBox.width - barPadding*2 + barinfo.interval) / xvaluerange;

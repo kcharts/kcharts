@@ -22,10 +22,18 @@
        // 图表容器
        var chart = new KCharts({renderTo:"#J_Canvas"});       
        
-       var series = [1,3,2,5,4,2,3];
+       var series = [
+         {"data":[{"yval":2},{"yval":4}]},
+         {"data":[{"yval":1},{"yval":1}]},
+         {"data":[{"yval":1},{"yval":1}]},
+         {"data":[{"yval":1},{"yval":1}]},
+         {"data":[{"yval":1},{"yval":-1}]},
+         {"data":[{"yval":1},{"yval":-3}]}
+       ];
        // 柱状图
        var bar = new Bar({
-         series:series
+         series:series,
+         biDirection:true  // 双向柱状图
        });
        chart.add(bar);
      });

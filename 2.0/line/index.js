@@ -3,7 +3,7 @@
  *   line bar scatter 有很大的相似之处
  * TODO 简化这个大文件
  * */
-;KISSY.add("gallery/kcharts/2.0/bar/index",function(S,Raphael,BaseChart,Promise,Anim,BaseUtil,D,E,K){
+;KISSY.add("gallery/kcharts/2.0/line/index",function(S,Raphael,BaseChart,Promise,Anim,BaseUtil,D,E,K){
    //==================== utils start ====================
 
    //==================== Class Line ====================
@@ -55,36 +55,36 @@
       this.set("xrange",xrange);
       this.set("yrange",yrange);
 
-      // var xvaluerange = xrange.max - xrange.min
-      // var yvaluerange = yrange.max - yrange.min;
+      var xvaluerange = xrange.max - xrange.min
+      var yvaluerange = yrange.max - yrange.min;
 
       // 确保有最小range
-      // if(xvaluerange < 5){
-      //   xvaluerange = 5;
-      // }
-      // if(yvaluerange < 1){
-      //   yvaluerange = 1;
-      // }
+      if(xvaluerange < 5){
+        xvaluerange = 5;
+      }
+      if(yvaluerange < 1){
+        yvaluerange = 1;
+      }
 
-      // 产生均匀的x轴刻度划分，NOTE:bar未用到
-      var xunit = (chartBBox.width) / (xrange.length-1);
-      // 分成上下相等的两部分
-      var yunit = (chartBBox.height) / (yrange.length);
+      var xunit = (chartBBox.width) / xvaluerange;
+      var yunit = (chartBBox.height) / yvaluerange;
+
+      // var graph = this.get("graph");
+      // var paper = graph.get("paper");
+      // paper.rect(chartBBox.left,chartBBox.top,chartBBox.width,chartBBox.height);
 
       // for later use
       this.set("@xunit",xunit);
       this.set("@yunit",yunit);
-
       //==================== 以上和bar一样 ====================
       var option = {
         chartBBox:chartBBox,
         xunit:xunit,
         yunit:yunit,
         xmin:xrange.min,
-        ymin:xrange.min
+        ymin:yrange.min
       };
       var series3 = BaseUtil.convertToCanvasPoint(series2,option);
-
       //==================== 绘制线条 ====================
       K.each(series3,function(serie,index){
         that.drawLine(serie.dataxy,chartBBox);
@@ -94,12 +94,11 @@
       var graph = this.get("graph");
       var paper = graph.get("paper");
 
-      var pstr = BaseUtil.polyLine(points,paper);
+      var pstr  = BaseUtil.polyLine(points,paper);
 
       paper.path(pstr);
     }
    });
-
 
    return Line;
  },{

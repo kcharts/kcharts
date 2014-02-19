@@ -27,16 +27,15 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,Anim,KCharts,BaseChart,K,Ba
       var chartBBox = this.getBBox();
       // 根据图表的左上角位置、图表宽度、高度（如果显示的设置了的话），转换所有的图标点为画布点
 
-      var groupLen = series2.length; // 组个数
-      var seriesLen = series2[0].data.length;// 单个组的bar个数
+      var groupLen = series2.length; // 单个组的bar个数
+      var seriesLen = series2[0].data.length;// 组个数
 
       //==================== 柱子的默认信息 ====================
       var maxWidth = 40
         , maxInterval = 40 // 单个柱形之间的最大间隔
-        , maxGroupInterval = groupLen > 1 ? 60 : maxInterval // 柱形图组之间的最大间隔 ： 注意只有一组数据的时候
+        , maxGroupInterval = seriesLen > 1 ? 40 : maxInterval // 柱形图组之间的最大间隔 ： 注意只有一组数据的时候
         , r1 = .5  // interval/barwidth = 0.5
         , r2 = 3   // groupInterval/barwidth = 1.5
-
       //==================== interval barwidth groupinterval barPadding ====================
       // 多组的情况
       var interval; // bar之间的间隔
@@ -112,10 +111,11 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,Anim,KCharts,BaseChart,K,Ba
       var yvalues = [];
       K.each(series2,function(serie){
         K.each(serie.data,function(xy){
-          xvalues.push(xy.xval);
-          yvalues.push(xy.yval);
+          xvalues.push(Math.abs(xy.xval));
+          yvalues.push(Math.abs(xy.yval));
         });
       });
+
       // 获取合适的刻度
       var xrange = BaseUtil.getRange(xvalues,xrangeConfig);
       var yrange = BaseUtil.getRange(yvalues,yrangeConfig);
@@ -126,6 +126,7 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,Anim,KCharts,BaseChart,K,Ba
 
       var xvaluerange = xrange.max - xrange.min;
       var yvaluerange = yrange.max - yrange.min;
+      // console.log(JSON.stringify(yrange));
 
       if(xvaluerange === 0){
         xvaluerange = 1;
@@ -139,6 +140,12 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,Anim,KCharts,BaseChart,K,Ba
       var xunit = (chartBBox.width - barPadding*2 + barinfo.interval) / xvaluerange;
       var yunit = (chartBBox.height) / yvaluerange;
 
+      var biDirection = this.get("biDirection");
+
+      // 双向的bar要除以2
+      if(biDirection){
+        yunit/=2;
+      }
       // for later use
       this.set("@xunit",xunit);
       this.set("@yunit",yunit);
@@ -157,7 +164,7 @@ KISSY.add("gallery/kcharts/2.0/bar/index",function(S,Anim,KCharts,BaseChart,K,Ba
         barinfo:barinfo,
         chartBBox:chartBBox,
         barPadding:barPadding,
-        biDirection:this.get("biDirection"), // 双向柱状图标记
+        biDirection:biDirection, // 双向柱状图标记
         isbar:true
       };
       // console.log(JSON.stringify(series2));

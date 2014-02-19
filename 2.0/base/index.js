@@ -5,10 +5,16 @@ KISSY.add("gallery/kcharts/2.0/base/index",function(S){
   var Base = S.require("base");
 
   var BaseChart = Base.extend({
+    initializer:function(){
+      this.chartCounter = 0; // 拥有的图表个数计数器
+    },
     // 添加widget
     plug:function(widget){
       var graph = this.get("graph");
       var chart = this;
+
+      // 图表个数递增
+      this.chartCounter++;
 
       widget.set({
         graph:graph,
@@ -18,7 +24,10 @@ KISSY.add("gallery/kcharts/2.0/base/index",function(S){
       widget.render();
     },
     // 移除widget
-    unplug:function(){},
+    unplug:function(){
+      // 图表个数递减
+      this.chartCounter--;
+    },
     //==================== 基础方法 start ====================
     // 设置图表的绘制区域，多个图表混搭的时候，需要手动设置参数，比如图表的左上角x、y，图表的宽高；单个图表默认占据整个容器
     getBBox:function(){
@@ -63,6 +72,13 @@ KISSY.add("gallery/kcharts/2.0/base/index",function(S){
       var x0 = bbox.left;
       var y0 = bbox.top + bbox.height;
 
+      if(option.xAlign === "top"){
+        y0 -= bbox.height;
+      }
+      if(option.yAlign === "right"){
+        x0 += bbox.width;
+      }
+
       xlabel = S.map(xrange.vals,function(xval,i){
                  var p = rullerPointsX[i];
                  return {
@@ -74,7 +90,7 @@ KISSY.add("gallery/kcharts/2.0/base/index",function(S){
 
       ylabel = S.map(yrange.vals,function(yval,i){
                  var p = rullerPointsY[i];
-                 // var y = option.yunit*Math.abs(xy.yval);
+                 var x;
                  return {
                    x:p.x0,
                    y:p.y0,
@@ -84,6 +100,10 @@ KISSY.add("gallery/kcharts/2.0/base/index",function(S){
       ret.xlabel = xlabel;
       ret.ylabel = ylabel;
       return ret;
+    },
+    // 图表是否在混搭 判断标准是 this.chartCounter 的数目 > 1;
+    isInMixedMode:function(){
+      return this.chartCounter > 1;
     }
     //==================== 基础方法 end ====================
   });

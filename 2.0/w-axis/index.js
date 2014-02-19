@@ -95,6 +95,11 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
      * 依赖chart属性：
      *   1. xrange
      *   2. yrange
+     * note for this.get("isShowX")
+     *   - isShowX 是否绘制x轴刻度
+     *   - isShowY 是否绘制y轴刻度
+     *   - xAlign  值为bottom|top，默认bottom
+     *   - yAlign  值为left|right，默认left
      * */
     render:function(){
       var graph = this.get("graph");
@@ -106,15 +111,23 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
 
       var bbox = chart.getBBox();
 
+      var isShowX = this.get("isShowX"),
+          isShowY = this.get("isShowY");
+      var option = {
+        xunit:chart.get("@xunit"),
+        yunit:chart.get("@yunit"),
+        xAlign:this.get("xAlign"),
+        yAlign:this.get("yAlign")
+      };
       // 一、普通的情况
       // note ： 当为双向的bar时，A不是在最左下角
-      //   │ B
+      //   │B                 B2
       //   │
       //   │
       //   │
-      //A1 │ A                 C
-      // ─└──────────
-      //   │A2
+      //A1 │A                 C
+      // ─└────────── A3
+      //   │A2                A4
       //   │
       //   │
       //   │
@@ -125,8 +138,14 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
       var A1y = Ay;
       var A2x = Ax;
       var A2y = Ay + 5;
+      var A3x = bbox.left + bbox.width;
+      var A3y = bbox.top + bbox.height;
+      var A4x = bbox.left + bbox.width;
+      var A4y = bbox.top + bbox.height + 5;
       var Bx = bbox.left;
       var By = bbox.top; // TODO 如果有箭头样式要做fix
+      var B2x = bbox.left + bbox.width;
+      var B2y = bbox.top;
       var Cx = bbox.left + bbox.width; // TODO 如果有箭头样式要做fix
       var Cy = bbox.top + bbox.height;
 
@@ -140,14 +159,23 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
         A1y = Ay;
       }
 
-      // x轴:x长一点
+      var ruller;// 刻度尺样式
+      // 1. x轴
+      // 1.1 x轴:x长一点
       paper.path(BaseUtil.polyLine([{x:A1x,y:A1y},{x:Cx+5,y:Cy}]));
-      // y轴:y长一点
-      paper.path(BaseUtil.polyLine([{x:A2x,y:A2y},{x:Bx,y:By-5}]));
-
-      // tick标尺:x
+      // 1.2 tick标尺:x
       var xrange = chart.get("xrange");
-      var rullerPointsX = BaseUtil.getRullerPoints([Ax,Ay],[Cx,Cy],{
+      var fromX,fromY,toX,toY;
+      if(option.xAlign === "top"){
+        fromX = Bx; toX = bbox.left + bbox.width;
+        fromY = By; toY = bbox.top;
+        ruller = "-."
+      }else{
+        fromX = Ax;toX = Cx;
+        fromY = Ay;toY = Cy;
+        ruller = ".-"
+      }
+      var rullerPointsX = BaseUtil.getRullerPoints([fromX,fromY],[toX,toY],{
         n:xrange.length,
         scale:5
       });
@@ -155,55 +183,81 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
         xaxis:true
       });
 
-      // 绘制x轴标尺文案
-      // each(rullerPointsX,function(p,i){
-      //   paper.text(p.x0,p.y0+20,xytext.xtext[i]);
-      // });
+      // 2. y轴
+      // 2.1 y轴:y长一点，适当往上移动5个单位
+      if(option.yAlign === "right"){
+        paper.path(BaseUtil.polyLine([{x:A4x,y:A4y},{x:B2x,y:B2y-5}]));
+      }else{
+        paper.path(BaseUtil.polyLine([{x:A2x,y:A2y},{x:Bx,y:By-5}]));
+      }
 
-      // tick标尺:y
+      // 2.2 tick标尺:y
       var yrange = chart.get("yrange");
       var rullerPointsY;
       var start=1;
-      if(isBiBar){
-        // 又修正回来
-        Ay = bbox.top + bbox.height;
-        rullerPointsY = BaseUtil.getRullerPoints([Ax,Ay],[Bx,By],{
-          n:yrange.length,
-          scale:5
-        });
-        start = 0;
+      // if(isBiBar){
+        // rullerPointsY = BaseUtil.getRullerPoints([fromX,fromY],[toX,toY],{
+        //   n:yrange.length,
+        //   scale:5
+        // });
+        // start = 0;
+      // }else{
+      if(option.yAlign === "right"){
+        fromX = A3x; toX = B2x;
+        fromY = A3x; toY = B2y;
+        ruller = ".-"
       }else{
-        rullerPointsY = BaseUtil.getRullerPoints([Ax,Ay],[Bx,By],{
-          n:yrange.length,
-          scale:5
-        });
+        fromX = Ax;toX = Bx;
+        fromY = Ay;toY = By;
+        ruller = "-."
       }
+
+      rullerPointsY = BaseUtil.getRullerPoints([fromX,fromY],[toX,toY],{
+        n:yrange.length,
+        scale:5
+      });
+      // }
+
       drawRullerPoints(rullerPointsY,paper,{
         yaxis:false,
-        start:start
+        start:start,
+        style:{ruller:ruller}
       });
 
-      // 绘制y轴标尺文案
-      // each(rullerPointsY,function(p,i){
-      //   paper.text(p.x0 - 20,p.y0,xytext.ytext[i]);
-      // });
+      // 3. x y轴文案绘制
+      // if(isShowX !== false && isShowY !== false){
+        // 3.0 获取xy轴文案
+        var xylabels = chart.getXYText(rullerPointsX, rullerPointsY, option);
+        if(isShowX !== false){
+          // 3.2 绘制y轴标尺文案
+          each(xylabels.xlabel,function(p,i){
+            var y;
+            if(option.xAlign === "top"){
+              y = p.y - 15;
+            }else{
+              y = p.y + 15;
+            }
+            var el = paper.text(p.x,y,p.xtext || i);
+          });
+        }
+        if(isShowY !== false){
+          // 3.1 绘制y轴标尺文案
+          each(xylabels.ylabel,function(p,i){
+            var x,attr;
+            if(option.yAlign === "right"){
+              x = p.x + 10;
+              attr = {"text-anchor":"start"};
+            }else{
+              x = p.x - 8;
+              attr = {"text-anchor":"end"};
+            }
+            var el = paper.text(x,p.y,p.ytext || i);
+            el.attr(attr);
+          });
+        }
+      // }
 
-      // 获取xy轴文案
-      // console.log(JSON.stringify(rullerPointsY));
-      var option = {
-          xunit:chart.get("@xunit"),
-          yunit:chart.get("@yunit")
-      };
-      var xylabels = chart.getXYText(rullerPointsX, rullerPointsY, option);
-      // 绘制x、y轴标尺文案
-      each(xylabels.ylabel,function(p,i){
-        paper.text(p.x - 15,p.y,p.ytext || i);
-      });
-
-      each(xylabels.xlabel,function(p,i){
-        paper.text(p.x,p.y+15,p.xtext || i);
-      });
-
+      // **去掉双坐标！默认谁要双坐标啊？只有混搭的时候才出现双坐标，并且是手动配置出来的**
       // 二、如果配置了双坐标轴，比如添加CD坐标轴，或者BD坐标轴
       //   │                D│D1
       // E ─────────── D2
@@ -215,6 +269,7 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
       // ─└──────────
       //   │                 │C1
       //
+      /*
       var doubleY = this.get("doubleY");
       if(doubleY){
         var Dx = bbox.left + bbox.width;
@@ -276,6 +331,7 @@ KISSY.add("gallery/kcharts/2.0/w-axis/index",function(S,Base,BaseUtil){
           style:{ruller:".-"}
         });
       }
+      */
     },
     destroy:function(){
 

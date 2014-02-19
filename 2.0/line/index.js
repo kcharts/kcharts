@@ -1,7 +1,6 @@
 /**
  * overview :
  *   line bar scatter 有很大的相似之处
- * TODO 简化这个大文件
  * */
 ;KISSY.add("gallery/kcharts/2.0/line/index",function(S,Raphael,BaseChart,Promise,Anim,BaseUtil,D,E,K){
    //==================== utils start ====================
@@ -23,13 +22,11 @@
       // [{name:"第一组",data:[{xval:3,y:"A"},{xval:2,yval:"B"},...]}]
       // series 标准数据格式
       var series2 = BaseUtil.formatSeriesData(series1);
-
       // 只有y轴数据时，line需要修正出数据
       series2 = K.map(series2,function(serie){
                   serie.data = BaseUtil.textSeriesToNumberSeries(serie.data)
                   return serie;
                 });
-
       var chartBBox = this.getBBox();
       // 根据图表的左上角位置、图表宽度、高度（如果显示的设置了的话），转换所有的图标点为画布点
 
@@ -50,7 +47,6 @@
       // 获取合适的刻度
       var xrange = BaseUtil.getRange(xvalues,xrangeConfig);
       var yrange = BaseUtil.getRange(yvalues,yrangeConfig);
-
       // for later widget use
       this.set("xrange",xrange);
       this.set("yrange",yrange);
@@ -85,6 +81,12 @@
         ymin:yrange.min
       };
       var series3 = BaseUtil.convertToCanvasPoint(series2,option);
+      // console.log(JSON.stringify(series3));
+
+      // var graph = this.get("graph");
+      // var paper = graph.get("paper");
+      // paper.circle(30,370,5);
+
       //==================== 绘制线条 ====================
       K.each(series3,function(serie,index){
         that.drawLine(serie.dataxy,chartBBox);
@@ -93,10 +95,16 @@
     drawLine:function(points){
       var graph = this.get("graph");
       var paper = graph.get("paper");
-
-      var pstr  = BaseUtil.polyLine(points,paper);
-
-      paper.path(pstr);
+      var pstr;
+      if(points.length === 1){ // 只有一个点的时候也要绘制出来
+        paper.circle(points[0].x,points[0].y,3);
+      }else{
+        S.each(points,function(p){
+          paper.circle(p.x,p.y,3);
+        });
+        pstr = BaseUtil.polyLine(points/*,paper*/);
+        paper.path(pstr);
+      }
     }
    });
 

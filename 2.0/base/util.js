@@ -80,14 +80,14 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
     var needle = series[0];
     var xval = series[0].xval;
     var yval = series[0].yval;
-    if(!xval || typeof xval === "string"){
+    if(typeof xval === "undefined" || typeof xval === "string"){
       result = K.map(series,function(s,index){
                  s.xstring = s.xval || index;
                  s.xval = index;
                  return s;
                });
     }
-    if(!yval || typeof yval === "string"){
+    if(typeof yval === "undefined" || typeof yval === "string"){
       result = K.map(series,function(s,index){
                  s.ystring = s.yval;
                  s.yval = index;
@@ -201,13 +201,17 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
                          var x;
                          // barinfo.groupinterval = 40;
                          if(option.isbar){ // bar
-                           x = groupIndex*(barinfo.barwidth + barinfo.interval) + barIndex*(option.m*barinfo.barwidth+(option.m-1)*barinfo.interval + barinfo.groupinterval);
+                           x = groupIndex*(barinfo.barwidth + barinfo.interval) +
+                               barIndex*(option.m*barinfo.barwidth +
+                                         (option.m-1)*barinfo.interval +
+                                         barinfo.groupinterval);
+
                            x = chartBBox.left + barPadding + x;
                          }else{            // line or scatter
                            x = option.xunit * (xy.xval - option.xmin);
                            x = chartBBox.left + x;
                          }
-                         var y = option.yunit * Math.abs( xy.yval - option.ymin );
+                         var y = option.yunit * (Math.abs(xy.yval) -  Math.abs(option.ymin ));
 
                          var w;
                          var h;
@@ -444,25 +448,31 @@ KISSY.add("gallery/kcharts/2.0/base/util",function(S,K){
   BaseUtil.tickIt = tickIt2;
 
   //==================== 连线 ====================
-   /**
-    * 曲线
-    * @param points{Array} 点集
-    * paper for test
-    * */
-  function polyLine(points,paper){
+  /**
+   * 曲线
+   * @param points{Array} 点集
+   * paper for test
+   * note：注意只有一个点的时候也要画出一个点
+   * */
+  function polyLine(points/*,paper*/){
     var s;
-    for(var i=0,l=points.length;i<l;i++){
-      var point = points[i]
-        , x = point.x
-        , y = point.y
-      // paper.circle(x,y,2);
-      if(i){
-        s.push("L",x,y);
-      }else{
-        s = ["M",x,y]
+    if(points.length === 1){
+      s = '';
+    }else{
+      for(var i=0,l=points.length;i<l;i++){
+        var point = points[i]
+          , x = point.x
+          , y = point.y
+        // paper.circle(x,y,2);
+        if(i){
+          s.push("L",x,y);
+        }else{
+          s = ["M",x,y]
+        }
       }
+      s = s.join(',');
     }
-    return s.join(',');
+    return s;
   }
 
   /**
